@@ -30,31 +30,51 @@ A browser-based Optical Character Recognition (OCR) application for Kannada and 
 
 ## Installation
 
-### Option 1: Run Built Version
+### Option 1: Run Built Version (Frontend Only)
 
 ```bash
 # Clone the repository
 git clone https://github.com/sanchaya/ocrsanchaya.git
-cd ocr-sanchaya
+cd ocrsanchaya
 
 # Navigate to the built app
 cd ocr-kannada/dist
 
 # Start a local server (Python)
 python3 -m http.server 8080
-
-# Or with Node.js
-npx serve
 ```
 
 Then open http://localhost:8080 in your browser.
 
-### Option 2: Development Mode
+### Option 2: Run with Research Server (Stores OCR Results)
+
+This option saves OCR results to a `research/` folder for analysis.
 
 ```bash
 # Clone the repository
 git clone https://github.com/sanchaya/ocrsanchaya.git
-cd ocr-sanchaya/ocr-kannada
+cd ocrsanchaya
+
+# Install Python dependencies
+pip3 install flask flask-cors requests
+
+# Start the Flask server (runs on port 5001)
+python3 server.py
+
+# In another terminal, start the frontend
+cd ocr-kannada/dist
+python3 -m http.server 8080
+```
+
+- App: http://localhost:8080
+- API: http://localhost:5001
+
+### Option 3: Development Mode
+
+```bash
+# Clone the repository
+git clone https://github.com/sanchaya/ocrsanchaya.git
+cd ocrsanchaya/ocr-kannada
 
 # Install dependencies
 npm install
@@ -65,10 +85,10 @@ npm run dev
 
 Then open http://localhost:5173 in your browser.
 
-### Option 3: Build for Production
+### Option 4: Build for Production
 
 ```bash
-cd ocr-sanncaya/ocr-kannada
+cd ocrsanchaya/ocr-kannada
 
 # Install dependencies
 npm install
@@ -89,7 +109,22 @@ npm run build
 6. **Extract Words** - Click "Unique Words" to get all unique words
 7. **Export** - Save as TXT or DOCX file
 
-## Technology Stack
+## Research Data
+
+When running with the Flask server (Option 2), OCR results are stored in the `research/` folder:
+
+- **ocr_results.json** - Stores all OCR outputs with:
+  - Timestamp
+  - IP address (for research analytics)
+  - Language and engine used
+  - Text content and word count
+
+- **corrected_words.json** - Stores user corrections:
+  - Added/removed words
+  - Original and corrected text
+  - IP address
+
+View stats: http://localhost:5001/api/stats
 
 - [Tesseract.js](https://github.com/naptha/tesseract.js) - OCR engine
 - [Vue.js 3](https://vuejs.org/) - Frontend framework
