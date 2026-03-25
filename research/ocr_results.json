@@ -1,0 +1,90 @@
+[
+  {
+    "id": "dd856309-b724-4bd1-8293-d87642680935",
+    "timestamp": "2026-03-25T22:28:46.598162",
+    "ip": "127.0.0.1",
+    "user_agent": "curl/7.80.0",
+    "language": "kan",
+    "engine": "tesseract",
+    "text": "test",
+    "text_length": 4,
+    "word_count": 1
+  },
+  {
+    "id": "5797a44d-cada-4538-a0a4-896c15821721",
+    "timestamp": "2026-03-25T22:51:49.722969",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan",
+    "engine": "tesseract",
+    "text": "ಪರಾಭವ ನಾಮ ಸ೦ಪವತರದ ಶುಭಾಶಯಗಳು",
+    "text_length": 27,
+    "word_count": 4
+  },
+  {
+    "id": "e1972c1a-57ff-45e8-ac0b-e4a2caa28945",
+    "timestamp": "2026-03-25T22:52:26.711120",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan",
+    "engine": "tesseract",
+    "text": "ಲೇಖಕರ ಮಾತು. 2\nಮುನ್ನುಡಿ \"1\nಘಟಕ |. ವಿಕಲತೆಯ ಅರ್ಥೈಸುವಿಕೆ\n\n12. ಅಂಗವಿಕಲತೆಯ ವ್ಯಾಖ್ಯಾನ ತ\n1.2 ವಿಕಲತೆಯ ಅಂಕಿಅಂಶ 19\n1.3 ವಿಕಲತೆಗೆ ಕಾರಣಗಳು 29\nಘಟಕ ॥. ವಿಕಲತೆಯ ತಡೆಗಟ್ಟುವಿಕೆ ಮತ್ತು\n\nನಿರ್ವಹಣೆ\n\n2.] ಪ್ರಾಥಮಿಕ ತಡೆಗಟ್ಟುವಿಕೆ ಹಂತ 4\n22 ಮಾಧ್ಯಮಿಕ ಹಂತ 46\n23 ತೃತೀಯ ಹಂತ 54\n2.4 ಸರ್ಕಾರಿ ಪ್ರಾಯೋಜಿತ ಕಾರ್ಯಕ್ರಮಗಳು 55\n2.5 ಪುನರ್ವಸತಿ ತಂಡ 63\n2.6 ತಜ್ಞರು ಮತ್ತು ಪೋಷಕರ ನಡುವಿನ ಸಹಭಾಗಿತ್ವ 64\n2.7 ವಿಶಿಷ್ಟ ಗುರುತಿನ ಚೀಟಿ ಯೋಜನೆ. 68",
+    "text_length": 376,
+    "word_count": 62
+  },
+  {
+    "id": "53843ea8-93c5-476a-a53e-f6bd9fdf1c13",
+    "timestamp": "2026-03-25T22:52:37.465036",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan+eng",
+    "engine": "tesseract",
+    "text": "ಲೇಖಕರ ಮಾತು. xi\nಮುನ್ನುಡಿ xiv\nಘಟಕ |. ವಿಕಲತೆಯ ಅರ್ಥೈಸುವಿಕೆ\n\n12. ಅಂಗವಿಕಲತೆಯ ವ್ಯಾಖ್ಯಾನ 3\n12 ವಿಕಲತೆಯ ಅಂಕಿಅಂಶ 19\n1.3 ವಿಕಲತೆಗೆ ಕಾರಣಗಳು 29\nಘಟಕ II. ವಿಕಲತೆಯ ತಡೆಗಟ್ಟುವಿಕೆ ಮತ್ತು\n\nನಿರ್ವಹಣೆ\n\n2.1 ಪ್ರಾಥಮಿಕ ತಡೆಗಟ್ಟುವಿಕೆ ಹಂತ 4\n22 ಮಾಧ್ಯಮಿಕ ಹಂತ 46\n23 ತೃತೀಯ ಹಂತ 54\n2.4 ಸರ್ಕಾರಿ ಪ್ರಾಯೋಜಿತ ಕಾರ್ಯಕ್ರಮಗಳು 55\n2.5 ಪುನರ್ವಸತಿ ತಂಡ 63\n2.6 ತಜ್ಞರು ಮತ್ತು ಪೋಷಕರ ನಡುವಿನ ಸಹಭಾಗಿತ್ವ 64\n2.7 ವಿಶಿಷ್ಟ ಗುರುತಿನ ಚೀಟಿ ಯೋಜನೆ. 68",
+    "text_length": 378,
+    "word_count": 62
+  },
+  {
+    "id": "1bc066cf-5335-4425-9716-c9341edbc0ac",
+    "timestamp": "2026-03-25T23:13:58.352503",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan",
+    "engine": "tesseract",
+    "text": "ಕುಮಾರವ್ಯಾಸ ಭಾರತ ಓದು\nಕೀಚಕನ ಪ್ರಸಂಗ\nಮತ್ತು\nಉತ್ತರ ಕುಮಾರನ ಪ್ರಸಂಗ\nಸಿ.ಪಿ.ನಾಗರಾಜ\nನಾಗು ಸ್ಮಾರಕ ಪ್ರಕಾಶನ\n೭೫, ೫ನೆಯ ಕ್ರಾಸ್‌, \"ಎ \"ಬ್ಲಾಕ್‌, ಕ್ರಿಶ್ಚಗಾರ್ಡನ್‌\nಆರ್‌.ವಿ.ಕಾಲೇಜು ಪೋಸ್ಟ್‌, ಬೆಂಗಳೂರು-೫೬೦ ೦೫೯",
+    "text_length": 179,
+    "word_count": 23
+  },
+  {
+    "id": "a062f300-f9c3-48bc-8434-faf7950df997",
+    "timestamp": "2026-03-25T23:18:27.152914",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan+eng",
+    "engine": "tesseract",
+    "text": "ಗ! EA\n\n4 A nn\n\n೪ 6 AS]\n\nNIN ಕಿ 3 ~z >\nse (| ಜ್ರ qe\nGs ಲ್ನ [ತ್ತ : [Ez =\nBe, o> ಸತ್ರ — ॥॥\n= & ರ in\n\nಸರ್ವಜ್ಞನ ವಚನಗಳ ಓದು\nಸಿ.ಪಿ.ನಾಗರಾಜ",
+    "text_length": 129,
+    "word_count": 36
+  },
+  {
+    "id": "98bf6afc-3e59-4052-b82b-1a0557fc077f",
+    "timestamp": "2026-03-25T23:18:34.356677",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan+eng",
+    "engine": "tesseract",
+    "text": "SARVAJNA VACHANAGALA ೦೧೮\n\nby C.P.Nagaraja, Published by Nagu Smaraka Prakashana,\n75, 5th Cross, ‘A’ Block, Krishna Garden, R.V.College Post,\nBengaluru-560 059\n\nMobile: 9986347521\n\nFirst Edition : 2024\n\nPage 104\n\nPrice : Free\n\nSize : Demy 1/8\n\nCopyright: Author\n\nPage Layout: Harish KR\n\nCover Design. : Omshivaprakash",
+    "text_length": 316,
+    "word_count": 46
+  },
+  {
+    "id": "ebd94491-7483-45f1-9cc8-f73e257d4348",
+    "timestamp": "2026-03-25T23:26:53.076762",
+    "ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "language": "kan",
+    "engine": "tesseract",
+    "text": "ಗ ಬ\n\nಜೆ\n\nಗ\n\nಗ ಹರಿಶ್ಚಂದ್ರ ಕಾವ್ಯ\n\nಪ್ರಸಂಗ ಓದು\nಸಿಪಿನಾಗರಾಜ\n\nಗ\n\nಸ",
+    "text_length": 59,
+    "word_count": 12
+  }
+]
