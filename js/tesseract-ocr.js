@@ -24,7 +24,13 @@ $( document ).ready(function() {
 				}
 				let file = this.files[0];
 				reader.readAsDataURL(file);
-				startRecognize(file);
+				
+				var fileType = file.type || file.name.toLowerCase().split('.').pop();
+				if (fileType === "application/pdf" || file.name.toLowerCase().endsWith('.pdf')) {
+					processPDF(file);
+				} else {
+					startRecognize(file);
+				}
 			}
 			else{
 				label.innerHTML = labelVal;
@@ -50,6 +56,73 @@ $("#startLink").click(function () {
 	var img = document.getElementById('selected-image');
 	startRecognize(img);
 });
+
+function processPDF(file) {
+	$("#arrow-right").removeClass("fa-arrow-right");
+	$("#arrow-right").addClass("fa-spinner fa-spin");
+	$("#arrow-down").removeClass("fa-arrow-down");
+	$("#arrow-down").addClass("fa-spinner fa-spin");
+	$("#log").html('<div class="status">Processing PDF...</div>');
+	
+	var reader = new FileReader();
+	reader.onload = function(e) {
+		var typedarray = new Uint8Array(e.target.result);
+		
+		pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+			var totalPages = pdf.numPages;
+			var currentPage = 1;
+			var fullText = "";
+			
+			function processPage(pageNum) {
+				return pdf.getPage(pageNum).then(function(page) {
+					var viewport = page.getViewport({ scale: 1.5 });
+					var canvas = document.createElement('canvas');
+					var context = canvas.getContext('2d');
+					canvas.height = viewport.height;
+					canvas.width = viewport.width;
+					
+					return page.render({ canvasContext: context, viewport: viewport }).promise.then(function() {
+						$("#log").html('<div class="status">Processing page ' + pageNum + ' of ' + totalPages + '...</div>');
+						return canvas.toDataURL('image/png');
+					});
+				}).then(function(dataURL) {
+					return new Promise(function(resolve) {
+						var img = new Image();
+						img.onload = function() {
+							var tempWorker = new Tesseract.TesseractWorker({
+								corePath: window.navigator.userAgent.indexOf("Edge") > -1
+									? 'js/tesseract-core.asm.js'
+									: 'js/tesseract-core.wasm.js'
+							});
+							tempWorker.recognize(img, $("#langsel").val())
+								.then(function(result) {
+									fullText += result.data.text + "\n\n";
+									resolve();
+								});
+						};
+						img.src = dataURL;
+					});
+				});
+			}
+			
+			var pagePromises = [];
+			for (var i = 1; i <= totalPages; i++) {
+				pagePromises.push(processPage(i));
+			}
+			
+			Promise.all(pagePromises).then(function() {
+				$("#log").html('');
+				var pre = document.createElement('pre');
+				pre.appendChild(document.createTextNode(fullText.replace(/\n\s*\n/g, '\n')));
+				$("#log").append(pre);
+				$("#editable-text").val(fullText.replace(/\n\s*\n/g, '\n'));
+				$(".fas").removeClass('fa-spinner fa-spin');
+				$(".fas").addClass('fa-check');
+			});
+		});
+	};
+	reader.readAsArrayBuffer(file);
+}
 
 function startRecognize(img){
 	$("#arrow-right").removeClass("fa-arrow-right");
@@ -91,6 +164,8 @@ function progressUpdate(packet){
 			line.appendChild(pre)
 			$(".fas").removeClass('fa-spinner fa-spin')
 			$(".fas").addClass('fa-check')
+			
+			$("#editable-text").val(packet.data.text.replace(/\n\s*\n/g, '\n'));
 		}
 
 		log.insertBefore(line, log.firstChild)
@@ -121,3 +196,41 @@ function recognizeFile(file){
 			progressUpdate({ status: 'done', data: data })
 		})
 }
+
+$("#export-txt").click(function() {
+	var text = $("#editable-text").val();
+	if(!text) {
+		alert("No text to export!");
+		return;
+	}
+	var blob = new Blob([text], { type: "text/plain" });
+	var url = URL.createObjectURL(blob);
+	var a = document.createElement("a");
+	a.href = url;
+	a.download = "ocr-result.txt";
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+});
+
+$("#export-docx").click(function() {
+	var text = $("#editable-text").val();
+	if(!text) {
+		alert("No text to export!");
+		return;
+	}
+	
+	var docText = text.replace(/\n/g, "\r\n");
+	var header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>OCR Result</title></head><body>";
+	var footer = "</body></html>";
+	var sourceHTML = header + docText.replace(/\n/g, "<br>") + footer;
+	
+	var source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+	var a = document.createElement("a");
+	a.href = source;
+	a.download = "ocr-result.doc";
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+});
