@@ -7,11 +7,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY server.py requirements.txt ./
-COPY research ./research
-COPY uploads ./uploads
-COPY texts ./texts
 
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir -p uploads texts research
 
 EXPOSE 5001
 
