@@ -134,7 +134,7 @@ The server will start on http://localhost:5001.
 Edit `ocr-kannada/src/App.vue` and set the server URL:
 
 ```javascript
-const SERVER_URL = 'http://localhost:5001'; // or your server URL
+const SERVER_URL = 'https://ocr-server.sanchaya.net'; // or your server URL
 ```
 
 Then rebuild: `npm run build` and deploy.
