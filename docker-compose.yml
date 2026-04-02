@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  ocr-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ocr-sanchaya-server
+    ports:
+      - "5001:5001"
+    volumes:
+      - ocr-uploads:/app/uploads
+      - ocr-texts:/app/texts
+      - ocr-research:/app/research
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+
+volumes:
+  ocr-uploads:
+  ocr-texts:
+  ocr-research:

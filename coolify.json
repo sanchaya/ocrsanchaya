@@ -1,0 +1,35 @@
+{
+  "name": "ocr-sanchaya-server",
+  "description": "OCR Server for Sanchaya - stores uploaded files and OCR text",
+  "version": "1.0.0",
+  "restart_policy": "unless-stopped",
+  "ports": [
+    {
+      "host": 5001,
+      "container": 5001,
+      "protocol": "tcp"
+    }
+  ],
+  "build": {
+    "context": "./",
+    "dockerfile": "Dockerfile"
+  },
+  "volumes": [
+    {
+      "host": "./uploads",
+      "container": "/app/uploads"
+    },
+    {
+      "host": "./texts",
+      "container": "/app/texts"
+    },
+    {
+      "host": "./research",
+      "container": "/app/research"
+    }
+  ],
+  "environment": [
+    "FLASK_ENV=production",
+    "FLASK_DEBUG=0"
+  ]
+}
