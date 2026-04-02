@@ -272,7 +272,7 @@ When running the server, these directories are created automatically:
 - [Swathanthra Malayalam Computing (SMC)](https://smc.org.in) - For the tesseract-ocr-web project
 - [Sanchaya](https://sanchaya.net) - For the design system
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) - OCR engine
-- [Sanchiya Foundation](https://sanchifoundation.org) - For supporting Indic language technology
+- [Sanchi Foundation](https://sanchifoundation.org) - For supporting Indic language technology
 
 ---
 
