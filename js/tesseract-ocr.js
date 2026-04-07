@@ -17,187 +17,196 @@ function detectScript(text) {
   return scripts.length > 0 ? scripts : ['unknown'];
 }
 
-function parseHOCR(hocrText) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(hocrText, 'text/html');
-  const lines = [];
-  let currentBlock = null;
-  
-  doc.querySelectorAll('.ocr_line').forEach(line => {
-    const words = [];
-    let lineText = '';
-    let lineStyles = {
-      bold: false,
-      italic: false,
-      fontSize: null
-    };
-    
-    line.querySelectorAll('.ocrx_word').forEach(word => {
-      const text = word.textContent.trim();
-      if (!text) return;
-      
-      const title = word.getAttribute('title') || '';
-      const fontMatch = title.match(/x_font\s+(\d+)/);
-      const baselineMatch = title.match(/baseline\s+([\d.-]+)\s+([\d.-]+)/);
-      
-      words.push({
-        text,
-        x: parseInt(fontMatch?.[1] || 0),
-        baseline: baselineMatch ? parseFloat(baselineMatch[1]) : 0,
-        scripts: detectScript(text)
-      });
-      
-      lineText += text + ' ';
-    });
-    
-    lineText = lineText.trim();
-    if (!lineText) return;
-    
-    const bboxMatch = line.getAttribute('title')?.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
-    if (bboxMatch) {
-      lines.push({
-        text: lineText,
-        top: parseInt(bboxMatch[2]),
-        bottom: parseInt(bboxMatch[4]),
-        words: words,
-        scripts: detectScript(lineText),
-        isBold: lineStyles.bold,
-        isItalic: lineStyles.italic
-      });
-    }
-  });
-  
-  return lines;
-}
-
-function hocrToStructuredText(hocrText, preserveFormatting = true) {
-  const lines = parseHOCR(hocrText);
-  
-  if (!preserveFormatting) {
-    return lines.map(l => l.text).join('\n');
-  }
-  
-  let result = '';
-  let lastScript = null;
-  
-  lines.forEach((line, index) => {
-    const currentScripts = line.scripts;
-    
-    if (lastScript && !arraysEqual(lastScript, currentScripts)) {
-      result += `\n[Scripts: ${currentScripts.join(', ')}]\n`;
-    }
-    
-    if (line.scripts.includes('kannada') && line.scripts.includes('english')) {
-      result += line.words.map(w => {
-        if (w.scripts.includes('kannada')) {
-          return `<span class="kannada">${w.text}</span>`;
-        } else {
-          return `<span class="english">${w.text}</span>`;
-        }
-      }).join(' ') + '\n';
-    } else {
-      result += line.text + '\n';
-    }
-    
-    lastScript = currentScripts;
-  });
-  
-  return result;
-}
-
 function arraysEqual(a, b) {
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
-async function performOCRClientSide(imageData, language = 'kan', progressCallback = null) {
-  if (typeof Tesseract === 'undefined') {
-    throw new Error('Tesseract.js not loaded. Please include tesseract.min.js');
-  }
+function parseHOCR(hocrText, imageWidth, imageHeight) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(hocrText, 'text/html');
+  const lines = [];
+  const paragraphs = [];
   
-  const result = await Tesseract.recognize(imageData, language, {
-    logger: m => {
-      if (progressCallback && m.status === 'recognizing text') {
-        progressCallback({ progress: m.progress * 100, status: m.status });
+  doc.querySelectorAll('.ocr_par').forEach(par => {
+    const parBbox = par.getAttribute('title')?.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+    const parLines = [];
+    
+    par.querySelectorAll('.ocr_line').forEach(line => {
+      const words = [];
+      let lineText = '';
+      
+      line.querySelectorAll('.ocrx_word').forEach(word => {
+        const text = word.textContent.trim();
+        if (!text) return;
+        
+        const title = word.getAttribute('title') || '';
+        const bboxMatch = title.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+        const baselineMatch = title.match(/baseline\s+([\d.-]+)\s+([\d.-]+)/);
+        const fontMatch = title.match(/x_font\s+([^;]+)/);
+        const x_sizeMatch = title.match(/x_size\s+([\d.]+)/);
+        
+        if (bboxMatch) {
+          words.push({
+            text,
+            x: parseInt(bboxMatch[1]),
+            y: parseInt(bboxMatch[2]),
+            width: parseInt(bboxMatch[3]) - parseInt(bboxMatch[1]),
+            height: parseInt(bboxMatch[4]) - parseInt(bboxMatch[2]),
+            baseline: baselineMatch ? parseFloat(baselineMatch[1]) : 0,
+            font: fontMatch ? fontMatch[1].trim() : '',
+            fontSize: x_sizeMatch ? parseFloat(x_sizeMatch[1]) : 0,
+            scripts: detectScript(text)
+          });
+          lineText += text + ' ';
+        }
+      });
+      
+      if (words.length > 0) {
+        const lineBbox = line.getAttribute('title')?.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+        if (lineBbox) {
+          parLines.push({
+            text: lineText.trim(),
+            words,
+            x: parseInt(lineBbox[1]),
+            y: parseInt(lineBbox[2]),
+            width: parseInt(lineBbox[3]) - parseInt(lineBbox[1]),
+            height: parseInt(lineBbox[4]) - parseInt(lineBbox[2])
+          });
+        }
       }
+    });
+    
+    if (parLines.length > 0) {
+      paragraphs.push(parLines);
     }
   });
   
+  if (paragraphs.length === 0) {
+    doc.querySelectorAll('.ocr_line').forEach(line => {
+      const words = [];
+      let lineText = '';
+      
+      line.querySelectorAll('.ocrx_word').forEach(word => {
+        const text = word.textContent.trim();
+        if (!text) return;
+        
+        const title = word.getAttribute('title') || '';
+        const bboxMatch = title.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+        
+        if (bboxMatch) {
+          words.push({
+            text,
+            x: parseInt(bboxMatch[1]),
+            y: parseInt(bboxMatch[2]),
+            width: parseInt(bboxMatch[3]) - parseInt(bboxMatch[1]),
+            height: parseInt(bboxMatch[4]) - parseInt(bboxMatch[2]),
+            scripts: detectScript(text)
+          });
+          lineText += text + ' ';
+        }
+      });
+      
+      if (words.length > 0) {
+        const lineBbox = line.getAttribute('title')?.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+        if (lineBbox) {
+          lines.push({
+            text: lineText.trim(),
+            words,
+            x: parseInt(lineBbox[1]),
+            y: parseInt(lineBbox[2]),
+            width: parseInt(lineBbox[3]) - parseInt(lineBbox[1]),
+            height: parseInt(lineBbox[4]) - parseInt(lineBbox[2])
+          });
+        }
+      }
+    });
+  }
+  
   return {
-    text: result.data.text,
-    hocr: result.data.hocr,
-    structuredText: hocrToStructuredText(result.data.hocr, true),
-    lines: parseHOCR(result.data.hocr),
-    scripts: detectScript(result.data.text),
-    confidence: result.data.confidence
+    paragraphs,
+    lines: paragraphs.length === 0 ? lines : [],
+    imageWidth,
+    imageHeight
   };
 }
 
-async function performOCRWithHOCR(imageData, language = 'kan', progressCallback = null) {
-  try {
-    const ocrResult = await performOCRClientSide(imageData, language, progressCallback);
-    return {
-      success: true,
-      text: ocrResult.structuredText || ocrResult.text,
-      rawText: ocrResult.text,
-      scripts: ocrResult.scripts,
-      confidence: ocrResult.confidence,
-      lines: ocrResult.lines,
-      isClientSide: true
-    };
-  } catch (error) {
-    console.error('Client-side OCR failed:', error);
-    throw error;
+function hocrToLayoutHTML(hocrText, imageWidth, imageHeight) {
+  const parsed = parseHOCR(hocrText, imageWidth, imageHeight);
+  const containerWidth = imageWidth || 800;
+  const containerHeight = imageHeight || 1000;
+  
+  let html = `<div class="ocr-output" style="position: relative; width: ${containerWidth}px; min-height: ${containerHeight}px; font-family: 'Noto Sans', sans-serif;">`;
+  
+  if (parsed.paragraphs.length > 0) {
+    parsed.paragraphs.forEach((parLines, pIdx) => {
+      html += `<p class="ocr-paragraph" style="margin: 0; padding: 2px 0;">`;
+      parLines.forEach((line, lIdx) => {
+        html += `<span class="ocr-line" style="position: absolute; left: ${line.x}px; top: ${line.y}px; white-space: nowrap;">`;
+        line.words.forEach((word, wIdx) => {
+          const isKannada = word.scripts.includes('kannada');
+          const isDevanagari = word.scripts.includes('devanagari');
+          const fontStyle = isKannada || isDevanagari ? 'font-family: "Noto Sans Kannada", "Noto Sans", sans-serif;' : '';
+          html += `<span class="ocr-word" style="position: absolute; left: ${word.x - line.x}px; top: ${word.y - line.y}px; ${fontStyle}">${escapeHtml(word.text)}</span>`;
+        });
+        html += `</span>`;
+      });
+      html += `</p>`;
+    });
+  } else if (parsed.lines.length > 0) {
+    parsed.lines.forEach((line, idx) => {
+      html += `<span class="ocr-line" style="position: absolute; left: ${line.x}px; top: ${line.y}px; white-space: nowrap;">`;
+      line.words.forEach((word, wIdx) => {
+        const isKannada = word.scripts.includes('kannada');
+        const isDevanagari = word.scripts.includes('devanagari');
+        const fontStyle = isKannada || isDevanagari ? 'font-family: "Noto Sans Kannada", "Noto Sans", sans-serif;' : '';
+        html += `<span class="ocr-word" style="position: absolute; left: ${word.x - line.x}px; top: ${word.y - line.y}px; ${fontStyle}">${escapeHtml(word.text)}</span>`;
+      });
+      html += `</span>`;
+    });
   }
+  
+  html += '</div>';
+  return html;
 }
 
-window.performOCRWithHOCR = performOCRWithHOCR;
+function hocrToStructuredText(hocrText, preserveFormatting = true) {
+  const parsed = parseHOCR(hocrText, 0, 0);
+  
+  if (!preserveFormatting) {
+    const allLines = parsed.paragraphs.flat().length > 0 ? parsed.paragraphs.flat() : parsed.lines;
+    return allLines.map(l => l.text).join('\n');
+  }
+  
+  let result = '';
+  
+  if (parsed.paragraphs.length > 0) {
+    parsed.paragraphs.forEach((par, pIdx) => {
+      par.forEach((line, lIdx) => {
+        const lineText = line.words.map(w => w.text).join(' ');
+        result += lineText + '\n';
+      });
+      result += '\n';
+    });
+  } else {
+    parsed.lines.forEach(line => {
+      const lineText = line.words.map(w => w.text).join(' ');
+      result += lineText + '\n';
+    });
+  }
+  
+  return result.trim();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+window.hocrToLayoutHTML = hocrToLayoutHTML;
 window.hocrToStructuredText = hocrToStructuredText;
 window.parseHOCR = parseHOCR;
 window.detectScript = detectScript;
 
-window.initClientOCR = async function() {
-  if (typeof Tesseract === 'undefined') {
-    console.error('Tesseract.js not loaded');
-    return false;
-  }
-  
-  try {
-    const worker = await Tesseract.createWorker('kan');
-    window.__ocrWorker = worker;
-    console.log('Client-side OCR worker initialized');
-    return true;
-  } catch (err) {
-    console.error('Failed to initialize OCR worker:', err);
-    return false;
-  }
-};
-
-window.doClientOCR = async function(imageData, language = 'kan', progressCallback) {
-  if (!window.__ocrWorker) {
-    await window.initClientOCR();
-  }
-  
-  if (!window.__ocrWorker) {
-    throw new Error('OCR worker not available');
-  }
-  
-  const result = await window.__ocrWorker.recognize(imageData);
-  
-  if (progressCallback) {
-    progressCallback({ progress: 100, status: 'complete' });
-  }
-  
-  const structuredText = hocrToStructuredText(result.data.hocr || '', true);
-  const scripts = detectScript(result.data.text);
-  
-  return {
-    text: structuredText || result.data.text,
-    rawText: result.data.text,
-    hocr: result.data.hocr,
-    scripts: scripts,
-    confidence: result.data.confidence
-  };
-};
-
 window.__hocrReady = true;
-console.log('HOCR module loaded. Call window.doClientOCR(imageData, language) for structured OCR output.');
+console.log('HOCR module loaded with layout preservation');

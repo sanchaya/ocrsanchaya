@@ -27,13 +27,13 @@ window.initHOCRPatch = async function() {
   }
 
   try {
-    console.log('Creating OCR worker...');
+    console.log('Creating OCR worker with HOCR support...');
     const worker = await Tesseract.createWorker('kan+eng');
     window.__ocrWorker = worker;
-    console.log('OCR worker initialized');
+    console.log('OCR worker initialized with HOCR');
 
     window.__performClientOCR = async function() {
-      console.log('Starting OCR...');
+      console.log('Starting OCR with layout preservation...');
       
       let img = document.querySelector('.img-container img');
       if (!img) img = document.querySelector('#selected-image');
@@ -45,8 +45,10 @@ window.initHOCRPatch = async function() {
       }
 
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      const imgWidth = img.naturalWidth;
+      const imgHeight = img.naturalHeight;
+      canvas.width = imgWidth;
+      canvas.height = imgHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
 
@@ -63,19 +65,24 @@ window.initHOCRPatch = async function() {
         window.__ocrWorker = await Tesseract.createWorker(lang);
       }
 
-      console.log('Recognizing text...');
+      console.log('Recognizing text with HOCR...');
       const result = await window.__ocrWorker.recognize(canvas);
       
-      const text = result.data.text || '';
-      console.log('OCR complete! Length:', text.length, 'Confidence:', result.data.confidence);
+      const hocr = result.data.hocr || '';
+      const rawText = result.data.text || '';
+      
+      const layoutHTML = hocrToLayoutHTML(hocr, imgWidth, imgHeight);
+      const structuredText = hocrToStructuredText(hocr, true);
+      
+      console.log('OCR complete! Raw text length:', rawText.length, 'Confidence:', result.data.confidence);
 
       const editor = window.tinymce?.get?.('0');
       if (editor) {
-        editor.setContent(text);
-        console.log('Text set in TinyMCE editor');
+        editor.setContent(layoutHTML);
+        console.log('Layout HTML set in TinyMCE editor');
       }
 
-      return text;
+      return { rawText, structuredText, layoutHTML, confidence: result.data.confidence };
     };
 
     const originalDoOCR = window.doOCR;
@@ -87,7 +94,7 @@ window.initHOCRPatch = async function() {
       return result;
     };
 
-    console.log('HOCR patch applied - client-side OCR enabled');
+    console.log('HOCR patch applied - layout-preserving OCR enabled');
     return true;
   } catch (err) {
     console.error('Failed to initialize OCR worker:', err);
