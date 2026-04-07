@@ -154,3 +154,50 @@ window.performOCRWithHOCR = performOCRWithHOCR;
 window.hocrToStructuredText = hocrToStructuredText;
 window.parseHOCR = parseHOCR;
 window.detectScript = detectScript;
+
+window.initClientOCR = async function() {
+  if (typeof Tesseract === 'undefined') {
+    console.error('Tesseract.js not loaded');
+    return false;
+  }
+  
+  try {
+    const worker = await Tesseract.createWorker('kan');
+    window.__ocrWorker = worker;
+    console.log('Client-side OCR worker initialized');
+    return true;
+  } catch (err) {
+    console.error('Failed to initialize OCR worker:', err);
+    return false;
+  }
+};
+
+window.doClientOCR = async function(imageData, language = 'kan', progressCallback) {
+  if (!window.__ocrWorker) {
+    await window.initClientOCR();
+  }
+  
+  if (!window.__ocrWorker) {
+    throw new Error('OCR worker not available');
+  }
+  
+  const result = await window.__ocrWorker.recognize(imageData);
+  
+  if (progressCallback) {
+    progressCallback({ progress: 100, status: 'complete' });
+  }
+  
+  const structuredText = hocrToStructuredText(result.data.hocr || '', true);
+  const scripts = detectScript(result.data.text);
+  
+  return {
+    text: structuredText || result.data.text,
+    rawText: result.data.text,
+    hocr: result.data.hocr,
+    scripts: scripts,
+    confidence: result.data.confidence
+  };
+};
+
+window.__hocrReady = true;
+console.log('HOCR module loaded. Call window.doClientOCR(imageData, language) for structured OCR output.');

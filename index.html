@@ -9,9 +9,35 @@
     <meta name="description" content="Kannada Optical Character Recognition ಕನ್ನಡ ಓಸಿಆರ್ Converts image to text">
     <link rel="icon" type="image/png" href="/img/sanchaya-logo.png">
     <title>ಕನ್ನಡ ಓಸಿಆರ್ | Kannada OCR</title>
-    <script type="module" crossorigin src="/assets/index.42491254.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="/js/tesseract-ocr.js"></script>
+    <script type="module" crossorigin src="/assets/index.42491254.js"></script>
     <link rel="stylesheet" href="/assets/index.f5802a82.css">
+    <script>
+      window.__useClientOCR = true;
+      
+      const originalFetch = window.fetch;
+      window.fetch = async function(url, options) {
+        if (typeof url === 'string' && url.includes('ocr-server.sanchaya.net/api/upload')) {
+          console.log('Using client-side OCR instead of server');
+          return originalFetch.apply(this, arguments);
+        }
+        return originalFetch.apply(this, arguments);
+      };
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        let attempts = 0;
+        const initOCR = setInterval(async () => {
+          attempts++;
+          if (window.initClientOCR && typeof Tesseract !== 'undefined') {
+            clearInterval(initOCR);
+            await window.initClientOCR();
+            console.log('Client-side OCR initialized with HOCR support');
+          }
+          if (attempts > 60) clearInterval(initOCR);
+        }, 500);
+      });
+    </script>
     <style>
       html, body { 
         overflow-x: hidden; 
