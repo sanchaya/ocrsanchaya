@@ -27,13 +27,13 @@ window.initHOCRPatch = async function() {
   }
 
   try {
-    console.log('Creating HOCR worker...');
+    console.log('Creating OCR worker...');
     const worker = await Tesseract.createWorker('kan+eng');
-    window.__hocrWorker = worker;
-    console.log('HOCR worker initialized');
+    window.__ocrWorker = worker;
+    console.log('OCR worker initialized');
 
     window.__performClientOCR = async function() {
-      console.log('Starting client-side HOCR OCR...');
+      console.log('Starting OCR...');
       
       let img = document.querySelector('.img-container img');
       if (!img) img = document.querySelector('#selected-image');
@@ -50,31 +50,29 @@ window.initHOCRPatch = async function() {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
 
-      let lang = 'kan';
+      let lang = 'kan+eng';
       const langSelect = document.querySelector('.language-select select');
       if (langSelect) lang = langSelect.value;
       console.log('Using language:', lang);
       
       try {
-        await window.__hocrWorker.reinitialize(lang);
+        await window.__ocrWorker.reinitialize(lang);
       } catch (e) {
         console.log('Reinitializing worker with:', lang);
-        await window.__hocrWorker.terminate();
-        window.__hocrWorker = await Tesseract.createWorker(lang);
+        await window.__ocrWorker.terminate();
+        window.__ocrWorker = await Tesseract.createWorker(lang);
       }
 
       console.log('Recognizing text...');
-      const result = await window.__hocrWorker.recognize(canvas);
+      const result = await window.__ocrWorker.recognize(canvas);
       
-      const hocr = result.data.hocr || '';
-      const rawText = result.data.text || '';
-      const structuredText = hocrToStructuredText(hocr, true);
-      const text = structuredText || rawText;
+      const text = result.data.text || '';
+      console.log('OCR complete! Length:', text.length, 'Confidence:', result.data.confidence);
 
       const editor = window.tinymce?.get?.('0');
       if (editor) {
         editor.setContent(text);
-        console.log('OCR complete! Set in TinyMCE. Confidence:', result.data.confidence);
+        console.log('Text set in TinyMCE editor');
       }
 
       return text;
@@ -92,7 +90,7 @@ window.initHOCRPatch = async function() {
     console.log('HOCR patch applied - client-side OCR enabled');
     return true;
   } catch (err) {
-    console.error('Failed to initialize HOCR worker:', err);
+    console.error('Failed to initialize OCR worker:', err);
     return false;
   }
 };
