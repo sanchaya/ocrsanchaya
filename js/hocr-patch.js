@@ -5,18 +5,17 @@ window.initHOCRPatch = async function() {
   }
 
   window.__ocrServerDisabled = true;
-  window.fetch = (function(originalFetch) {
-    return function(url, options) {
-      if (typeof url === 'string' && url.includes('ocr-server.sanchaya.net')) {
-        console.log('Server OCR disabled, using client-side only');
-        return Promise.resolve(new Response(JSON.stringify({ status: 'disabled', message: 'Using client-side OCR' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }));
-      }
-      return originalFetch.apply(this, arguments);
-    };
-  })(window.fetch);
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    if (typeof url === 'string' && url.includes('ocr-server.sanchaya.net')) {
+      console.log('Server OCR blocked, using client-side only');
+      return Promise.resolve(new Response(JSON.stringify({ status: 'disabled' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+    return originalFetch.apply(this, arguments);
+  };
 
   let attempts = 0;
   while (attempts < 60) {
@@ -28,21 +27,21 @@ window.initHOCRPatch = async function() {
   }
 
   try {
+    console.log('Creating HOCR worker...');
     const worker = await Tesseract.createWorker('kan+eng');
     window.__hocrWorker = worker;
     console.log('HOCR worker initialized');
 
-    window.doClientSideOCR = async function() {
+    window.__performClientOCR = async function() {
       console.log('Starting client-side HOCR OCR...');
       
-      let img = document.querySelector('#selected-image');
-      if (!img) img = document.querySelector('.img-container img');
+      let img = document.querySelector('.img-container img');
+      if (!img) img = document.querySelector('#selected-image');
       if (!img) img = document.querySelector('.drop img');
-      if (!img) img = document.querySelector('img[id="selected-image"]');
       
-      if (!img || !img.src || img.naturalWidth === 0) {
-        console.log('No image found to OCR');
-        return;
+      if (!img || !img.src || img.naturalWidth === 0 || img.src.includes('Funny-Minion')) {
+        console.log('No valid image found');
+        return '';
       }
 
       const canvas = document.createElement('canvas');
@@ -52,60 +51,45 @@ window.initHOCRPatch = async function() {
       ctx.drawImage(img, 0, 0);
 
       let lang = 'kan';
-      const langSelect = document.querySelector('#langsel, .language-select select, select[id="langsel"]');
+      const langSelect = document.querySelector('.language-select select');
       if (langSelect) lang = langSelect.value;
       console.log('Using language:', lang);
       
       try {
         await window.__hocrWorker.reinitialize(lang);
       } catch (e) {
-        console.log('Reinitializing worker with language:', lang);
+        console.log('Reinitializing worker with:', lang);
         await window.__hocrWorker.terminate();
         window.__hocrWorker = await Tesseract.createWorker(lang);
       }
 
       console.log('Recognizing text...');
       const result = await window.__hocrWorker.recognize(canvas);
-      console.log('Recognition complete');
-
-      const structuredText = hocrToStructuredText(result.data.hocr || '', true);
-      const text = structuredText || result.data.text;
-
-      const vueApp = document.querySelector('#app').__vue_app__;
-      if (vueApp) {
-        const instance = vueApp._instance;
-        if (instance && instance.proxy) {
-          instance.proxy.text = text;
-          instance.proxy.originalText = text;
-          console.log('Set text via Vue proxy');
-        }
-      }
-
-      const textarea = document.querySelector('#editable-text, .tox-edit-area__iframe');
-      if (textarea) {
-        if (textarea.tagName === 'TEXTAREA') {
-          textarea.value = text;
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }
+      
+      const hocr = result.data.hocr || '';
+      const rawText = result.data.text || '';
+      const structuredText = hocrToStructuredText(hocr, true);
+      const text = structuredText || rawText;
 
       const editor = window.tinymce?.get?.('0');
       if (editor) {
         editor.setContent(text);
-        console.log('Set content in TinyMCE editor');
+        console.log('OCR complete! Set in TinyMCE. Confidence:', result.data.confidence);
       }
 
-      console.log('OCR complete! Confidence:', result.data.confidence);
       return text;
     };
 
     const originalDoOCR = window.doOCR;
     window.doOCR = async function() {
-      console.log('doOCR called');
-      return window.doClientSideOCR();
+      const result = await window.__performClientOCR();
+      if (!result && originalDoOCR) {
+        return originalDoOCR.apply(this, arguments);
+      }
+      return result;
     };
 
-    console.log('HOCR patch applied successfully - client-side OCR enabled');
+    console.log('HOCR patch applied - client-side OCR enabled');
     return true;
   } catch (err) {
     console.error('Failed to initialize HOCR worker:', err);
@@ -113,7 +97,10 @@ window.initHOCRPatch = async function() {
   }
 };
 
+let patchInitialized = false;
 document.addEventListener('DOMContentLoaded', () => {
+  if (patchInitialized) return;
+  patchInitialized = true;
   setTimeout(() => {
     window.initHOCRPatch();
   }, 2000);
