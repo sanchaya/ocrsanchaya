@@ -57,6 +57,11 @@ window.initHOCRPatch = async function() {
     if (langSelect) lang = langSelect.value;
     console.log('Language:', lang);
     
+    if (!window.__ocrWorker) {
+      console.log('Worker is null, recreating...');
+      window.__ocrWorker = await Tesseract.createWorker(lang);
+    }
+    
     try {
       await window.__ocrWorker.reinitialize(lang);
     } catch (e) {
