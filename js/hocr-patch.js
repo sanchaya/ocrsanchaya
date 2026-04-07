@@ -4,6 +4,20 @@ window.initHOCRPatch = async function() {
     return false;
   }
 
+  window.__ocrServerDisabled = true;
+  window.fetch = (function(originalFetch) {
+    return function(url, options) {
+      if (typeof url === 'string' && url.includes('ocr-server.sanchaya.net')) {
+        console.log('Server OCR disabled, using client-side only');
+        return Promise.resolve(new Response(JSON.stringify({ status: 'disabled', message: 'Using client-side OCR' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+      return originalFetch.apply(this, arguments);
+    };
+  })(window.fetch);
+
   let attempts = 0;
   while (attempts < 60) {
     if (window.Tesseract && window.Tesseract.createWorker) {
@@ -18,34 +32,21 @@ window.initHOCRPatch = async function() {
     window.__hocrWorker = worker;
     console.log('HOCR worker initialized');
 
-    window.__originalDoOCR = window.doOCR;
-
-    window.doOCR = async function() {
-      const img = document.querySelector('#selected-image, .drop img, .img-container img');
-      if (!img || !img.src || img.src.includes('Funny-Minion')) {
-        if (window.__originalDoOCR) {
-          return window.__originalDoOCR.apply(this, arguments);
-        }
-        return;
-      }
-
+    window.doClientSideOCR = async function(imageElement) {
       console.log('Using client-side HOCR OCR');
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-
-      const lang = window.__ocrLang || 'kan';
       
-      if (window.__hocrWorker) {
-        try {
-          await window.__hocrWorker.reinitialize(lang);
-        } catch (e) {
-          await window.__hocrWorker.terminate();
-          window.__hocrWorker = await Tesseract.createWorker(lang);
-        }
-      } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = imageElement.naturalWidth;
+      canvas.height = imageElement.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imageElement, 0, 0);
+
+      const lang = document.querySelector('#langsel, .language-select select')?.value || 'kan';
+      
+      try {
+        await window.__hocrWorker.reinitialize(lang);
+      } catch (e) {
+        await window.__hocrWorker.terminate();
         window.__hocrWorker = await Tesseract.createWorker(lang);
       }
 
@@ -68,7 +69,18 @@ window.initHOCRPatch = async function() {
       return text;
     };
 
-    console.log('HOCR patch applied successfully');
+    const originalDoOCR = window.doOCR;
+    window.doOCR = async function() {
+      const img = document.querySelector('#selected-image, .drop img, .img-container img');
+      if (img && img.src && !img.src.includes('Funny-Minion') && img.naturalWidth > 0) {
+        return window.doClientSideOCR(img);
+      }
+      if (originalDoOCR) {
+        return originalDoOCR.apply(this, arguments);
+      }
+    };
+
+    console.log('HOCR patch applied successfully - client-side OCR enabled');
     return true;
   } catch (err) {
     console.error('Failed to initialize HOCR worker:', err);
