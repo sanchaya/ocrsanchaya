@@ -134,21 +134,21 @@ window.initHOCRPatch = async function() {
           <div style="padding:16px;background:#f8f9fa;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin:0;">${title}</h3>
             <div>
-              <button onclick="window.__copyHOCRContent()" style="padding:8px 16px;margin-right:8px;cursor:pointer;">Copy</button>
-              <button onclick="this.closest('.hocr-modal').remove()" style="padding:8px 16px;cursor:pointer;background:#dc3545;color:#fff;border:none;border-radius:4px;">Close</button>
+              <button id="copy-hocr-btn" style="padding:8px 16px;margin-right:8px;cursor:pointer;">Copy</button>
+              <button id="close-hocr-btn" style="padding:8px 16px;cursor:pointer;background:#dc3545;color:#fff;border:none;border-radius:4px;">Close</button>
             </div>
           </div>
           <div style="flex:1;overflow:auto;padding:16px;">
-            <textarea id="hocr-content" style="width:100%;height:100%;font-family:monospace;font-size:12px;border:1px solid #ddd;padding:8px;">${type === 'html' || type === 'hocr' ? content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : content}</textarea>
+            <textarea id="hocr-content-display" style="width:100%;height:100%;font-family:monospace;font-size:12px;border:1px solid #ddd;padding:8px;box-sizing:border-box;">${type === 'html' || type === 'hocr' ? content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : content}</textarea>
           </div>
         </div>
       `;
       modal.className = 'hocr-modal';
-      modal.querySelector('button').onclick = () => modal.remove();
       document.body.appendChild(modal);
       
-      window.__copyHOCRContent = function() {
-        const ta = document.getElementById('hocr-content');
+      modal.querySelector('#close-hocr-btn').onclick = () => modal.remove();
+      modal.querySelector('#copy-hocr-btn').onclick = () => {
+        const ta = document.getElementById('hocr-content-display');
         if (ta) {
           navigator.clipboard.writeText(ta.value).then(() => {
             alert('Copied to clipboard!');
@@ -158,39 +158,33 @@ window.initHOCRPatch = async function() {
     };
 
     window.__addHOCRButtons = function() {
-      setTimeout(() => {
-        const buttonGroup = document.querySelector('.button-group');
-        if (!buttonGroup) return;
-        
-        if (document.getElementById('hocr-html-btn')) return;
-        
-        const btnHtml = document.createElement('button');
-        btnHtml.id = 'hocr-html-btn';
-        btnHtml.className = 'btn-secondary';
-        btnHtml.textContent = 'View HTML';
-        btnHtml.onclick = () => window.showHOCROutput('html');
-        btnHtml.style.marginLeft = '8px';
-        
-        const btnHocr = document.createElement('button');
-        btnHocr.id = 'hocr-raw-btn';
-        btnHocr.className = 'btn-secondary';
-        btnHocr.textContent = 'View HOCR';
-        btnHocr.onclick = () => window.showHOCROutput('hocr');
-        btnHocr.style.marginLeft = '8px';
-        
-        const btnText = document.createElement('button');
-        btnText.id = 'hocr-text-btn';
-        btnText.className = 'btn-secondary';
-        btnText.textContent = 'View Text';
-        btnText.onclick = () => window.showHOCROutput('text');
-        btnText.style.marginLeft = '8px';
-        
-        buttonGroup.appendChild(btnHtml);
-        buttonGroup.appendChild(btnHocr);
-        buttonGroup.appendChild(btnText);
-        
-        console.log('HOCR view buttons added');
-      }, 3000);
+      const buttonGroup = document.querySelector('.actions');
+      if (!buttonGroup) {
+        console.log('Button group not found, retrying...');
+        setTimeout(window.__addHOCRButtons, 1000);
+        return;
+      }
+      
+      if (document.getElementById('hocr-html-btn')) {
+        console.log('HOCR buttons already added');
+        return;
+      }
+      
+      const btnContainer = document.createElement('div');
+      btnContainer.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;';
+      btnContainer.innerHTML = `
+        <button id="hocr-html-btn" class="btn-secondary" style="padding:10px 16px;font-size:13px;">View HTML</button>
+        <button id="hocr-raw-btn" class="btn-secondary" style="padding:10px 16px;font-size:13px;">View HOCR</button>
+        <button id="hocr-text-btn" class="btn-secondary" style="padding:10px 16px;font-size:13px;">View Text</button>
+      `;
+      
+      btnContainer.querySelector('#hocr-html-btn').onclick = () => window.showHOCROutput('html');
+      btnContainer.querySelector('#hocr-raw-btn').onclick = () => window.showHOCROutput('hocr');
+      btnContainer.querySelector('#hocr-text-btn').onclick = () => window.showHOCROutput('text');
+      
+      buttonGroup.appendChild(btnContainer);
+      
+      console.log('HOCR view buttons added successfully');
     };
 
     const originalDoOCR = window.doOCR;
@@ -208,7 +202,7 @@ window.initHOCRPatch = async function() {
     console.log('HOCR patch applied - layout-preserving OCR enabled with view options');
     return true;
   } catch (err) {
-    console.error('Failed to initialize OCR worker:', err);
+    console.error('Failed to initialize HOCR worker:', err);
     return false;
   }
 };
