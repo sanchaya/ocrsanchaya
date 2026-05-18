@@ -103,6 +103,30 @@ def upload_file():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/')
+def serve_index():
+    """Serve the main frontend page."""
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    """Serve JavaScript files."""
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'js'), filename)
+
+
+@app.route('/style/<path:filename>')
+def serve_style(filename):
+    """Serve CSS files."""
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'style'), filename)
+
+
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    """Serve image files."""
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images'), filename)
+
+
 @app.route('/uploads/<filename>')
 def serve_uploaded_file(filename):
     """Serve uploaded files."""

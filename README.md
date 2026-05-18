@@ -4,19 +4,25 @@ A browser-based Optical Character Recognition (OCR) application for Kannada and 
 
 ## Features
 
-- **Multi-language OCR** - Supports 14 Indian languages
-- **PDF Support** - Upload and process multi-page PDF documents
-- **Image Support** - Accepts JPG, PNG, GIF, BMP, TIFF formats
-- **Drag & Drop** - Drag files directly or paste from clipboard
-- **Page Navigation** - Navigate through PDF pages before processing
-- **Recognize All Pages** - Batch process all pages in a PDF
-- **Real-time Progress** - See OCR progress for each page
-- **Text Editor** - Built-in editor with spell checker for proofreading
-- **Word Diff** - Track changes made to OCR'd text
-- **Unique Words** - Extract and copy unique words from OCR'd text
-- **Export Options** - Export results as TXT or DOCX
-- **Server Storage** - Optional: Store files and text on server for research
-- **Sanchaya Styling** - Modern UI matching [fonts.sanchaya.net](https://fonts.sanchaya.net)
+- **Multi-language OCR** — Supports 14 Indian languages, including Kannada + English mixed
+- **Default Kannada + English** — Language dropdown defaults to `kan+eng` for mixed-script documents
+- **Styled Text Preservation** — Bold, italic, and font sizes from the original document are preserved in the editor
+- **PDF Support** — Upload and process multi-page PDF documents
+- **Image Support** — Accepts JPG, PNG, GIF, BMP, TIFF formats
+- **Drag & Drop** — Drag files directly or paste from clipboard
+- **Page Navigation** — Navigate through PDF pages before processing
+- **Recognize All Pages** — Batch process all pages in a PDF; editor shows page 1 immediately while remaining pages process in the background
+- **Per-Page Editing** — OCR text is stored per page; navigate pages to view and edit each page's text individually
+- **Page View / Combined View** — Toggle between per-page editing and a combined view of all pages
+- **Real-time Progress** — See OCR progress for each page
+- **Rich Text Editor** — Built-in TinyMCE editor with proper paragraph/line break rendering, Kannada spell checker, and OCR style preservation
+- **Word Diff** — Track changes made to OCR'd text (added/removed words highlighted)
+- **Unique Words** — Extract and copy unique words from OCR'd text
+- **Export Options** — Export as TXT, DOCX, hOCR, HTML layout (with preserved styling), or TSV
+- **hOCR/HTML/TSV Viewer** — View raw hOCR, HTML layout, and TSV data in a full-screen modal
+- **User Guide** — Built-in help modal with usage instructions
+- **Server Storage** — Optional: Store files and text on server for research
+- **Sanchaya Styling** — Modern UI matching [fonts.sanchaya.net](https://fonts.sanchaya.net)
 
 ## Supported Languages
 
@@ -211,14 +217,17 @@ Then click **Redeploy** in Coolify.
 
 ## Usage
 
-1. **Upload Image/PDF** - Drag & drop, paste from clipboard, or click to select file
-2. **Select Language** - Choose from the dropdown (default: Kannada)
-3. **Recognize** - Click "Recognize" for single page, or "Recognize All Pages" for PDFs
-4. **Edit Text** - Use the built-in editor to correct OCR errors
-5. **Track Changes** - See word diff when editing text
-6. **Extract Words** - Click "Unique Words" to get all unique words
-7. **Export** - Save as TXT or DOCX file
-8. **Server Storage** - If configured, files and text are saved to the server
+1. **Upload Image/PDF** — Drag & drop, paste from clipboard, or click to select file
+2. **Select Language** — Choose from the dropdown (default: Kannada + English)
+3. **Recognize** — Click "Recognize" for single page, or "Recognize All Pages" for PDFs
+4. **Edit Text** — Use the built-in editor to correct OCR errors; original styling (bold, italic, font size) is preserved
+5. **Navigate Pages (PDFs)** — Use Prev/Next to switch pages; editor updates to show each page's OCR text
+6. **View Modes** — Toggle between Page View (per-page editing) and Combined View (all pages concatenated)
+7. **Track Changes** — See word diff when editing text
+8. **Extract Words** — Click "Unique Words" to get all unique words
+9. **Export** — Save as TXT, DOCX, hOCR, HTML (with styling), or TSV
+10. **Help** — Click ಸಹಾಯ | Help in the header for the built-in usage guide
+11. **Server Storage** — If configured, files and text are saved to the server
 
 ---
 
@@ -232,9 +241,12 @@ ocrsanchaya/
 ├── docker-compose.yml     # Docker Compose config
 ├── coolify.json          # Coolify configuration
 ├── README.md              # This file
+├── DOCUMENTATION.md       # Full codebase documentation
+├── docs/
+│   └── index.html         # HTML documentation page
 ├── ocr-kannada/
 │   ├── src/
-│   │   ├── App.vue        # Main Vue component
+│   │   ├── App.vue        # Main Vue component (OCR, editor, export)
 │   │   └── components/
 │   │       └── ImageLoader.vue  # Image/PDF loader
 │   ├── public/
