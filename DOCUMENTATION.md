@@ -153,11 +153,11 @@ The main application component contains:
 
 **Script logic**:
 - **`PageData` interface**: Per-page storage of `{ text, hocr, tsv, styledHtml }` from Tesseract.js
-- **`textToHtml()`**: Converts plain text (with `\n\n` paragraphs and `\n` line breaks) to HTML with `<p>` and `<br>` tags for proper rendering in TinyMCE
+- **`textToHtml()`**: Converts plain text (with `\n\n` paragraph breaks and `\n` line breaks) to HTML with `<p>` and `<br>` tags for proper rendering. Joins lines within paragraphs with `<br>` for natural text flow, and joins paragraphs with `<p><br></p><p><br></p>` for visual spacing between blocks
 - **`escapeHtml(text)`**: Escapes HTML special characters (`&`, `<`, `>`, `"`, `'`) for safe insertion into HTML context; used by `generateStyledHtml`
 - **`generateStyledHtml(result)`**: Iterates over `result.data.words` from Tesseract.js, applies inline styling (`<strong>` for bold, `<em>` for italic, `<span style="font-size:Xpx">` for non-default font sizes), wraps each paragraph in `<p>` with `<br>`-separated lines. Returns styled HTML string for the editor
 - **`setEditorContent(html)`**: Sets the TinyMCE editor content with retry polling (up to 30 attempts at 150ms intervals) to handle cases where the editor hasn't finished initializing before OCR completes. Called instead of the old one-shot `updateEditor`
-- **`getStyledHtml(idx)`**: Returns `pageData[idx].styledHtml` if available; falls back to `textToHtml()` with paragraph wrappers. Central accessor used by page navigation, view mode switches, and OCR completion
+- **`getStyledHtml(idx)`**: Returns `pageData[idx].styledHtml` (styled HTML with bold/italic/font-size from OCR) if available; falls back to `textToHtml()` with proper paragraph/line breaks. Central accessor used by page navigation, view mode switches, and OCR completion
 - **`extractPageData(result)`**: Extracts plain text from `result.data.paragraphs`, copies hOCR/TSV, returns a `PageData` object
 - **`doOCR()`**: Single-page OCR, stores full `PageData` in `pageData[0]`, sets editor content via `setEditorContent`
 - **`doOCRAllPages()`**: Batch OCR for multi-page PDFs. Each page is processed in sequence; as soon as page 1 completes, its text appears in the editor while remaining pages continue processing in the background. Each page's full result (text/hocr/tsv/styledHtml) is stored in `pageData[]`
@@ -362,13 +362,65 @@ User edits → `onTextChange()` compares original vs current word sets → shows
 
 ---
 
+## 9. Text Formatting & Styled Text Preservation
+
+### 9.1 Line and Paragraph Breaks
+
+OCR output is converted to HTML with two levels of breaks:
+
+**Line breaks (within paragraphs):**
+- OCR lines (separated by `\n`) are joined with `<br>` for natural text flow
+- Lines display on separate rows but without extra vertical spacing
+- Example: "First line<br>Second line" renders as continuous paragraph
+
+**Paragraph breaks (between paragraphs):**
+- Paragraph separators (separated by `\n\n`) are joined with `<p><br></p><p><br></p>` 
+- Creates visual spacing (two empty lines) between logical sections
+- Helps distinguish different topics or sections in the document
+
+**Implementation:**
+```js
+textToHtml(text) {
+  return text
+    .split(/\n\n+/)                                          // Split by paragraph breaks
+    .map(p => p.split('\n').filter(...).join('<br>'))      // Lines: join with <br>
+    .map(p => `<p>${p}</p>`)                               // Wrap each paragraph in <p>
+    .join('\n<p><br></p>\n<p><br></p>\n');               // Join paragraphs with visual spacing
+}
+```
+
+### 9.2 Styled Text Preservation
+
+**What gets preserved:**
+- **Bold text** — Detected by Tesseract word-level `bold` flag → wrapped in `<strong>` tags
+- **Italic text** — Detected by Tesseract word-level `italic` flag → wrapped in `<em>` tags  
+- **Font sizes** — Non-default sizes (not 11px) → wrapped in `<span style="font-size:Xpx">` tags
+
+**Where styling appears:**
+- **Editor display** — `styledHtml` shows formatting inline for visual reference during editing
+- **HTML export** — Generated with `<strong>`, `<em>`, and `<span style="...">` tags
+- **TXT/DOCX export** — Plain text (formatting lost, but text content preserved)
+- **Manual edits** — When user edits text in the editor, styling is cleared (`styledHtml` invalidated) since the user's changes make the OCR styling unreliable
+
+**Generation flow:**
+```
+OCR result → generateStyledHtml()
+  ├─ Extract paragraphs from result.data.paragraphs
+  ├─ Build base HTML with textToHtml() (proper breaks)
+  ├─ Filter result.data.words for styled entries (bold || italic || font_size)
+  └─ Wrap styled words sequentially with <strong>/<em>/<span> tags
+  → Returns styled HTML with preserved formatting and proper breaks
+```
+
+---
+
 ## 9. Contributing & Development
 
-### 9.1 Prerequisites
+### 10.1 Prerequisites
 - Node.js 16+
 - Python 3.9+
 
-### 9.2 Tech Stack
+### 10.2 Tech Stack
 | Technology | Purpose |
 |-----------|---------|
 | Tesseract.js | Client-side OCR via WebAssembly |
@@ -377,7 +429,7 @@ User edits → `onTextChange()` compares original vs current word sets → shows
 | PDF.js | PDF rendering in browser |
 | Flask | Python web server (storage API) |
 
-### 9.3 Design Decisions
+### 10.3 Design Decisions
 1. **Client-side OCR** — Zero server load, offline-capable after language data download
 2. **Two frontends** — Static HTML (no build) vs Vue 3 SPA (rich editor)
 3. **Optional server** — Backend is optional; frontends work standalone

@@ -11,203 +11,105 @@
   --text: #1a1a2e;
   --muted: #4a4a68;
   --accent: #4361ee;
-  --accent-hover: #3f37c9;
   --border: #e0e0e0;
   --code-bg: #f0f0f5;
-  --green: #28a745;
-  --red: #dc3545;
-  --sidebar: 280px;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: 20px; }
 body {
-  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
-  background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 15px;
+  margin: 0;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-pre, code { font-family: 'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; }
-code {
-  background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px;
-}
-pre {
-  background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 8px;
-  overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0;
-}
+h1 { font-size: 28px; margin: 32px 0 16px; }
+h2 { font-size: 22px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 18px; margin: 20px 0 8px; }
+h4 { font-size: 15px; margin: 12px 0 6px; color: var(--muted); }
+code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0; }
 pre code { background: none; padding: 0; color: inherit; }
-h1, h2, h3, h4 { line-height: 1.3; color: var(--text); }
-h1 { font-size: 28px; margin: 0 0 4px; }
-h2 { font-size: 22px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
-h3 { font-size: 18px; margin: 24px 0 8px; }
-h4 { font-size: 15px; margin: 16px 0 6px; color: var(--muted); }
-p, li { color: var(--text); }
-ul, ol { padding-left: 24px; margin: 8px 0; }
-li { margin: 4px 0; }
+ul { padding-left: 24px; }
+li { margin: 6px 0; }
+p { margin: 12px 0; }
 table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
 th, td { padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
 th { background: var(--accent); color: #fff; font-weight: 600; }
-tr:nth-child(even) { background: var(--bg); }
-blockquote {
-  border-left: 4px solid var(--accent); padding: 12px 20px; margin: 16px 0;
-  background: rgba(67,97,238,0.05); border-radius: 0 8px 8px 0;
-}
-
-.wrapper {
-  display: flex; min-height: 100vh;
-}
-
-.sidebar {
-  width: var(--sidebar); position: fixed; top: 0; left: 0; bottom: 0;
-  background: var(--surface); border-right: 1px solid var(--border);
-  overflow-y: auto; padding: 24px 0; z-index: 10;
-}
-.sidebar-logo {
-  padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
-}
-.sidebar-logo h2 { font-size: 18px; border: none; margin: 0 0 2px; padding: 0; }
-.sidebar-logo span { font-size: 12px; color: var(--muted); }
-.sidebar nav a {
-  display: block; padding: 8px 20px; font-size: 13px; color: var(--text);
-  border-left: 3px solid transparent; transition: all 0.15s;
-}
-.sidebar nav a:hover, .sidebar nav a.active {
-  background: rgba(67,97,238,0.06); color: var(--accent); text-decoration: none;
-  border-left-color: var(--accent);
-}
-.sidebar nav .section-label {
-  padding: 16px 20px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.8px; color: var(--muted);
-}
-
-.content {
-  margin-left: var(--sidebar); flex: 1; max-width: 960px; padding: 40px 48px 80px;
-}
-
-.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-
-.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 24px 0; }
-.toc h3 { margin: 0 0 12px; font-size: 15px; }
-.toc ul { list-style: none; padding: 0; }
-.toc li { margin: 4px 0; }
-.toc a { font-size: 14px; }
-
-.filename { display: inline-block; font-family: monospace; font-size: 13px; color: var(--accent); }
-
-.grid-2 {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0;
-}
-.card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  padding: 20px; transition: box-shadow 0.2s;
-}
-.card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-.card h4 { margin: 0 0 8px; color: var(--accent); }
-
-.badge {
-  display: inline-block; padding: 2px 10px; border-radius: 12px;
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-}
-.badge-green { background: rgba(40,167,69,0.1); color: #155724; }
-.badge-blue { background: rgba(67,97,238,0.1); color: var(--accent); }
-
-@media (max-width: 768px) {
-  .sidebar { position: static; width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 16px; }
-  .content { margin-left: 0; padding: 24px 16px; }
-  .grid-2 { grid-template-columns: 1fr; }
-}
 </style>
 </head>
 <body>
+<div class="content">
+<h1>OCR Sanchaya — Codebase Documentation</h1>
 
-<div class="wrapper">
+<p>> A browser-based Optical Character Recognition (OCR) application for Kannada and 14+ Indic languages. Built with Tesseract.js and Vue.js 3.</p>
 
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <h2>OCR Sanchaya</h2>
-    <span>Codebase Documentation</span>
-  </div>
-  <nav>
-    <div class="section-label">Overview</div>
-    <a href="#intro">Introduction</a>
-    <a href="#architecture">Architecture</a>
-    <a href="#structure">Project Structure</a>
+<p>---</p>
 
-    <div class="section-label">Frontend</div>
-    <a href="#vue-app">Vue.js App</a>
-    <a href="#static-app">Static HTML App</a>
-    <a href="#image-loader">ImageLoader Component</a>
-    <a href="#tesseract">Tesseract.js Integration</a>
+<h2>Table of Contents</h2>
 
-    <div class="section-label">Backend</div>
-    <a href="#server">Flask Server</a>
-    <a href="#api">API Reference</a>
+<p>1. <a href="#1-architecture-overview">Architecture Overview</a></p>
+<p>2. <a href="#2-project-structure">Project Structure</a></p>
+<p>3. <a href="#3-frontend-vuejs-app-ocr-kannada">Frontend: Vue.js App (<code>ocr-kannada/</code>)</a></p>
+<p>4. <a href="#4-frontend-static-html-app-indexhtml">Frontend: Static HTML App (<code>index.html</code>)</a></p>
+<p>5. <a href="#5-backend-flask-server-serverpy">Backend: Flask Server (<code>server.py</code>)</a></p>
+<p>6. <a href="#6-deployment--operations">Deployment & Operations</a></p>
+<p>7. <a href="#7-api-reference">API Reference</a></p>
+<p>8. <a href="#8-data-flow">Data Flow</a></p>
+<p>9. <a href="#9-contributing--development">Contributing & Development</a></p>
 
-    <div class="section-label">Operations</div>
-    <a href="#deployment">Deployment</a>
-    <a href="#docker">Docker</a>
-    <a href="#data-flow">Data Flow</a>
+<p>---</p>
 
-    <div class="section-label">Reference</div>
-    <a href="#langs">Supported Languages</a>
-    <a href="#file-ref">File Reference</a>
-    <a href="#contributing">Contributing</a>
-  </nav>
-</aside>
+<h2>1. Architecture Overview</h2>
 
-<main class="content">
+<p>The project contains <strong>two independent frontends</strong> sharing a common backend:</p>
 
-<h1>OCR Sanchaya</h1>
-<p class="subtitle">Browser-based OCR for Kannada &amp; 14+ Indic Languages — Codebase Documentation</p>
-
-<section id="intro">
-  <h2>Introduction</h2>
-  <p>OCR Sanchaya is a browser-based Optical Character Recognition application focused on Kannada and other Indic scripts. All OCR processing runs <strong>entirely in the browser</strong> via Tesseract.js (WebAssembly). The backend server is optional and only provides storage for research data.</p>
-  <p>The project contains two frontend variants:</p>
-  <ul>
-    <li><strong>Vue 3 SPA</strong> (<code>ocr-kannada/</code>) — Full-featured with TinyMCE editor, styled HTML preservation (bold/italic/size from OCR word data), spellcheck, word diff, PDF pagination, multi-format export</li>
-    <li><strong>Static HTML</strong> (<code>index.html</code>) — Simple, no-build-required version served directly by Flask</li>
-  </ul>
-</section>
-
-<section id="architecture">
-  <h2>Architecture</h2>
-  <pre>
-┌─────────────────────────────────────────────────────────────┐
-│                      Frontend (2 variants)                   │
-│                                                             │
-│  ┌──────────────────────┐   ┌────────────────────────────┐  │
-│  │   Static HTML App    │   │   Vue 3 SPA (ocr-kannada/) │  │
-│  │   index.html + JS    │   │   Vite + TinyMCE + TypeScript│  │
-│  │   (no build step)    │   │   (full rich text editor)   │  │
-│  └──────────┬───────────┘   └──────────────┬─────────────┘  │
-│             │                               │               │
-│             └─────── Tesseract.js ──────────┘               │
-│                    (OCR in browser via WASM)                 │
-└──────────────────────────────┬──────────────────────────────┘
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (2 variants)                    │
+│                                                                 │
+│  ┌──────────────────────────┐   ┌────────────────────────────┐  │
+│  │   Static HTML App        │   │   Vue 3 SPA (ocr-kannada/) │  │
+│  │   index.html + JS        │   │   Vite + TinyMCE + TS      │  │
+│  │   (simple, no build)     │   │   (full-featured editor)   │  │
+│  └──────────┬───────────────┘   └──────────────┬─────────────┘  │
+│             │                                   │               │
+│             └─────────── Tesseract.js ──────────┘               │
+│                       (OCR in browser)                          │
+└──────────────────────────────┬──────────────────────────────────┘
                                │
                                ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Backend: Flask Server (port 5001)               │
-│                                                             │
-│  /api/upload      →  Store images/PDFs                      │
-│  /api/save-text   →  Store OCR text results                 │
-│  /api/stats       →  Storage statistics                     │
-│  /api/engines     →  Available OCR engines                  │
-└─────────────────────────────────────────────────────────────┘</pre>
-</section>
+┌─────────────────────────────────────────────────────────────────┐
+│                   Backend (Flask, port 5001)                     │
+│                                                                 │
+│  /api/upload     →  Stores images/PDFs                          │
+│  /api/save-text  →  Stores OCR text results                     │
+│  /api/stats      →  Storage statistics                          │
+│  /api/engines    →  Available OCR engines                       │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
 
-<section id="structure">
-  <h2>Project Structure</h2>
-  <pre>
+<p><strong>Key principle</strong>: All OCR processing runs <strong>client-side</strong> in the browser via Tesseract.js (WebAssembly). The server is purely for optional storage of uploads and results for research purposes.</p>
+
+<p>---</p>
+
+<h2>2. Project Structure</h2>
+
+<pre><code>
 ocrsanchaya/
+│
 ├── server.py                 # Flask backend (port 5001)
 ├── requirements.txt          # Python deps: Flask, Flask-CORS
 ├── Dockerfile                # Docker image (python:3.11-slim)
 ├── docker-compose.yml        # Compose with persistent volumes
 ├── coolify.json              # Coolify deployment config
 ├── deploy.sh                 # GitHub Pages deploy script
-├── DOCUMENTATION.md          # This document (markdown)
-├── docs/index.html           # This document (HTML)
+├── DOCUMENTATION.md          # This document
+├── docs/index.html           # HTML version of documentation
 │
 ├── index.html                # Static HTML frontend (simple)
 ├── js/                       # JS for static frontend
@@ -215,8 +117,14 @@ ocrsanchaya/
 │   ├── tesseract-core.wasm.js# WASM core for modern browsers
 │   ├── tesseract-core.asm.js # ASM.js fallback for Edge
 │   └── tesseract-ocr.js      # OCR logic, PDF processing, export
-├── style/ocr.css             # Styles for static frontend
-├── images/                   # Default demo images
+│
+├── style/
+│   └── ocr.css               # Styles for static frontend
+│
+├── images/                   # Default images for demo
+│   ├── sanchaya-logo.png
+│   ├── sanchaya.png
+│   └── kan-ocr-test.png
 │
 ├── uploads/                  # Uploaded files (server storage)
 ├── texts/                    # OCR text output (server storage)
@@ -224,425 +132,394 @@ ocrsanchaya/
 │   ├── ocr_results.json      # OCR results log
 │   └── corrected_words.json  # Manually corrected words
 │
-└── ocr-kannada/              # Vue 3 SPA frontend
-    ├── package.json          # npm dependencies
-    ├── vite.config.js        # Vite config (port 3000)
-    ├── tsconfig.json         # TypeScript config
-    ├── .nvmrc                # Node version: v16.17.1
-    ├── index.html            # SPA entry point
-    ├── src/
-    │   ├── main.js           # Vue app bootstrap
-    │   ├── App.vue           # Root component (~1350 lines)
-    │   └── components/
-    │       └── ImageLoader.vue # Image/PDF drag-drop & render
-    ├── public/
-    │   ├── CNAME             # ocr.sanchaya.net
-    │   ├── favicon.ico
-    │   ├── robots.txt
-    │   ├── _redirects        # SPA redirect rules
-    │   ├── img/
-    │   └── js/tinymce/       # TinyMCE editor resources
-    └── dist/                 # Production build output</pre>
-</section>
+├── ocr-kannada/              # Vue 3 SPA frontend
+│   ├── package.json          # npm deps
+│   ├── vite.config.js        # Vite config (port 3000)
+│   ├── tsconfig.json         # TypeScript config
+│   ├── index.html            # SPA entry point
+│   ├── src/
+│   │   ├── main.js           # Vue app bootstrap
+│   │   ├── App.vue           # Root component (full app)
+│   │   └── components/
+│   │       └── ImageLoader.vue # Image/PDF drag-drop &amp; render
+│   ├── public/
+│   │   ├── CNAME             # Custom domain: ocr.sanchaya.net
+│   │   ├── favicon.ico
+│   │   ├── robots.txt
+│   │   ├── _redirects        # SPA redirect rules
+│   │   ├── img/
+│   │   └── js/tinymce/       # TinyMCE rich text editor
+│   └── dist/                 # Production build output
+│
+└── README.md                 # Existing README
+</code></pre>
 
-<section id="vue-app">
-  <h2>Frontend: Vue.js App</h2>
+<p>---</p>
 
-  <p>The Vue 3 SPA at <code>ocr-kannada/</code> is the primary frontend. Built with Vite, TypeScript, and TinyMCE.</p>
+<h2>3. Frontend: Vue.js App (`ocr-kannada/`)</h2>
 
-  <h3>Key Files</h3>
-  <table>
-    <tr><th>File</th><th>Purpose</th></tr>
-    <tr><td><code>src/main.js</code></td><td>Creates and mounts the Vue 3 app</td></tr>
-    <tr><td><code>src/App.vue</code></td><td>Root component — template, logic (TS), and styles (937 lines)</td></tr>
-    <tr><td><code>src/components/ImageLoader.vue</code></td><td>File loading via drag-drop, paste, or file picker</td></tr>
-    <tr><td><code>public/js/tinymce/</code></td><td>Bundled TinyMCE editor resources</td></tr>
-  </table>
+<h3>3.1 Overview</h3>
 
-  <h3>App.vue — Core Features</h3>
+<p>A full-featured Single Page Application (SPA) built with <strong>Vue 3</strong> + <strong>Vite</strong> + <strong>TypeScript</strong>. It includes a rich text editor (TinyMCE) with Kannada spellcheck, PDF page navigation, word diff tracking, unique word extraction, per-page editing with page-linked editor, multi-format export (TXT, DOCX, hOCR, HTML layout, TSV), <strong>word-level styled HTML preservation</strong> (bold, italic, font size from Tesseract.js word data), and a built-in usage guide modal.</p>
 
-  <div class="grid-2">
-    <div class="card">
-      <h4>OCR Recognition</h4>
-      <p><code>doOCR()</code> — Runs Tesseract.js on the displayed image. <code>doOCRAllPages()</code> — Batch-processes multi-page PDFs; page 1 appears in editor immediately while remaining pages process in background.</p>
-    </div>
-    <div class="card">
-      <h4>Styled Rich Text Editor</h4>
-      <p>TinyMCE integration with Kannada spellcheck (via <code>spell.toolforge.org</code>). Page 1 OCR text appears as soon as it completes. <strong>Bold, italic, and font sizes</strong> from Tesseract.js word data are preserved as styled HTML via <code>generateStyledHtml()</code>.</p>
-    </div>
-    <div class="card">
-      <h4>Word Diff</h4>
-      <p><code>onTextChange()</code> — Tracks added/removed words when user edits OCR output. Shows green (added) and red (removed) panels.</p>
-    </div>
-    <div class="card">
-      <h4>Multi-Format Export</h4>
-      <p>TXT, DOCX, hOCR, HTML layout (with preserved styling), and TSV export. HTML layout uses <code>styledHtml</code> when available for richer output. Full-screen viewer for raw hOCR/HTML/TSV data.</p>
-    </div>
-  </div>
+<h3>3.2 Key Files</h3>
 
-  <h3>Tesseract.js Integration</h3>
-  <pre>
-const result = await Tesseract.recognize(imgSrc, language, { logger });
-// logger provides real-time progress: { status: "recognizing", progress: 0.45 }
-const paragraphs = result.data.paragraphs.map(p => p.text.trim());
-const text = paragraphs.join('\n\n');</pre>
+<p>| File | Purpose |</p>
+<p>|------|---------|</p>
+<p>| <code>src/main.js</code> | Creates and mounts the Vue 3 app |</p>
+<p>| <code>src/App.vue</code> | Root component — template, logic, and styles |</p>
+<p>| <code>src/components/ImageLoader.vue</code> | File loading via drag-drop, paste, or file picker |</p>
+<p>| <code>public/js/tinymce/</code> | Bundled TinyMCE editor resources |</p>
 
-  <h3>Server Integration (Optional)</h3>
-  <pre>
-const SERVER_URL = 'https://ocr-server.sanchaya.net'; // or 'http://localhost:5001'
-// Set to null to disable server storage entirely
+<h3>3.3 `src/main.js`</h3>
 
-const uploadFileToServer = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await fetch(`${SERVER_URL}/api/upload`, { method: 'POST', body: formData });
-  return res.json().file_id;
-};</pre>
+<pre><code>
+import { createApp } from &#x27;vue&#x27;
+import App from &#x27;./App.vue&#x27;
+createApp(App).mount(&#x27;#app&#x27;)
+</code></pre>
 
-  <h3>Running</h3>
-  <pre>
+<p>Minimal bootstrap — mounts the App component into <code><div id="app"></code>.</p>
+
+<h3>3.4 `src/App.vue`</h3>
+
+<p>The main application component contains:</p>
+
+<p><strong>Template sections</strong>:</p>
+<ul>
+<li><strong>Header</strong>: Logo, title, navigation links to Sanchaya properties</li>
+<li><strong>Image area</strong>: <code><ImageLoader></code> component for file input</li>
+<li><strong>Controls</strong>: Language selector (16 languages), OCR engine selector, progress bar</li>
+<li><strong>Action buttons</strong>: Recognize, Recognize All Pages, Unique Words, Export TXT, Export DOCX, Export hOCR, Export HTML Layout, Export TSV</li>
+<li><strong>hOCR/HTML/TSV export & viewer row</strong>: Export any format, or view raw data in a full-screen modal with monospace dark-theme display</li>
+<li><strong>View mode bar</strong>: Page View / Combined View tabs with page indicator for multi-page PDFs</li>
+<li><strong>Text editor</strong>: TinyMCE rich text editor with Kannada spellchecker integration</li>
+<li><strong>Diff panel</strong>: Shows added/removed words when the user edits OCR output</li>
+<li><strong>Unique words panel</strong>: Extract and copy unique words from OCR text</li>
+<li><strong>OCR viewer modal</strong>: Full-screen overlay for viewing hOCR, HTML, and TSV content</li>
+</ul>
+
+<p><strong>Script logic</strong>:</p>
+<ul>
+<li><strong><code>PageData</code> interface</strong>: Per-page storage of <code>{ text, hocr, tsv, styledHtml }</code> from Tesseract.js</li>
+<li><strong><code>textToHtml()</code></strong>: Converts plain text (with <code>\n\n</code> paragraph breaks and <code>\n</code> line breaks) to HTML with <code><p></code> and <code><br></code> tags for proper rendering. Joins lines within paragraphs with <code><br></code> for natural text flow, and joins paragraphs with <code><p><br></p><p><br></p></code> for visual spacing between blocks</li>
+<li><strong><code>escapeHtml(text)</code></strong>: Escapes HTML special characters (<code>&</code>, <code><</code>, <code>></code>, <code>"</code>, <code>'</code>) for safe insertion into HTML context; used by <code>generateStyledHtml</code></li>
+<li><strong><code>generateStyledHtml(result)</code></strong>: Iterates over <code>result.data.words</code> from Tesseract.js, applies inline styling (<code><strong></code> for bold, <code><em></code> for italic, <code><span style="font-size:Xpx"></code> for non-default font sizes), wraps each paragraph in <code><p></code> with <code><br></code>-separated lines. Returns styled HTML string for the editor</li>
+<li><strong><code>setEditorContent(html)</code></strong>: Sets the TinyMCE editor content with retry polling (up to 30 attempts at 150ms intervals) to handle cases where the editor hasn't finished initializing before OCR completes. Called instead of the old one-shot <code>updateEditor</code></li>
+<li><strong><code>getStyledHtml(idx)</code></strong>: Returns <code>pageData[idx].styledHtml</code> (styled HTML with bold/italic/font-size from OCR) if available; falls back to <code>textToHtml()</code> with proper paragraph/line breaks. Central accessor used by page navigation, view mode switches, and OCR completion</li>
+<li><strong><code>extractPageData(result)</code></strong>: Extracts plain text from <code>result.data.paragraphs</code>, copies hOCR/TSV, returns a <code>PageData</code> object</li>
+<li><strong><code>doOCR()</code></strong>: Single-page OCR, stores full <code>PageData</code> in <code>pageData[0]</code>, sets editor content via <code>setEditorContent</code></li>
+<li><strong><code>doOCRAllPages()</code></strong>: Batch OCR for multi-page PDFs. Each page is processed in sequence; as soon as page 1 completes, its text appears in the editor while remaining pages continue processing in the background. Each page's full result (text/hocr/tsv/styledHtml) is stored in <code>pageData[]</code></li>
+<li><strong><code>handlePageChanged()</code></strong>: When user navigates pages in ImageLoader, editor shows that page's OCR text with proper paragraph breaks</li>
+<li><strong><code>switchToPageView()</code> / <code>switchToCombinedView()</code></strong>: Toggle between per-page editing and combined view</li>
+<li><strong><code>onTextChange()</code></strong>: Saves edits back to the correct <code>pageData[].text</code> when in page view mode; clears <code>pageData[].styledHtml</code> since the user's manual edit invalidates the original OCR styling; strips HTML for clean plain-text storage</li>
+<li><strong><code>getPlainText()</code></strong>: Returns current plain-text content regardless of view mode (strips HTML if needed)</li>
+<li><strong><code>exportTxt()</code> / <code>exportDocx()</code> / <code>exportHocr()</code> / <code>exportHtmlLayout()</code> / <code>exportTsv()</code></strong>: Client-side download for all formats. HTML layout uses <code>styledHtml</code> when available for richer output</li>
+<li><strong><code>viewOcrFormat()</code></strong>: Opens full-screen modal for hOCR/HTML/TSV content</li>
+<li><strong><code>getCombinedHocr()</code> / <code>getCombinedHtmlLayout()</code> / <code>getCombinedTsv()</code></strong>: Merges per-page data with page separator comments</li>
+</ul>
+
+<p><strong>Tesseract.js integration</strong>:</p>
+<pre><code>
+const result = await Tesseract.recognize(imgSrc, languageCode, { logger });
+// result.data: { text, hocr, html, tsv, paragraphs, words, lines, blocks, ... }
+</code></pre>
+
+<p><strong>Server integration</strong>:</p>
+<pre><code>
+const SERVER_URL = &#x27;https://ocr-server.sanchaya.net&#x27;; // set to null to disable
+</code></pre>
+
+<h3>3.5 `src/components/ImageLoader.vue`</h3>
+
+<p>Handles all file input methods:</p>
+<ul>
+<li>Drag & drop, file picker, clipboard paste</li>
+<li>PDF processing via pdfjsLib — renders each page to canvas at 1.5x scale</li>
+<li>Emits <code>pdf-loaded</code>, <code>page-ready</code>, <code>file-loaded</code>, <code>page-changed</code></li>
+</ul>
+
+<h3>3.6 Supported Languages</h3>
+
+<p>| Language | Code | Language | Code |</p>
+<p>|----------|------|----------|------|</p>
+<p>| Assamese | <code>asm</code> | Bengali | <code>ben</code> |</p>
+<p>| Gujarati | <code>guj</code> | Hindi | <code>hin</code> |</p>
+<p>| Kannada | <code>kan</code> | Malayalam | <code>mal</code> |</p>
+<p>| Marathi | <code>mar</code> | Odia | <code>ori</code> |</p>
+<p>| Punjabi | <code>pan</code> | Sanskrit | <code>san</code> |</p>
+<p>| Sinhala | <code>sin</code> | Tamil | <code>tam</code> |</p>
+<p>| Telugu | <code>tel</code> | Urdu | <code>urd</code> |</p>
+<p>| English | <code>eng</code> | Kannada+English | <code>kan+eng</code> |</p>
+
+<h3>3.7 Running the Vue App</h3>
+
+<pre><code>
 cd ocr-kannada
 npm install
-npm run dev      # → http://localhost:3000
-npm run build    # → dist/</pre>
-</section>
+npm run dev     # Dev server on http://localhost:3000
+npm run build   # Production build → dist/
+npm run serve   # Preview production build
+</code></pre>
 
-<section id="static-app">
-  <h2>Frontend: Static HTML App</h2>
+<p>---</p>
 
-  <p>The static version at <code>index.html</code> requires no build step. Served directly by the Flask server at <code>http://localhost:5001/</code>.</p>
+<h2>4. Frontend: Static HTML App (`index.html`)</h2>
 
-  <h3>Key Files</h3>
-  <table>
-    <tr><th>File</th><th>Purpose</th></tr>
-    <tr><td><code>index.html</code></td><td>Main page — language selector, file input, image preview, OCR log, text editor</td></tr>
-    <tr><td><code>js/tesseract.min.js</code></td><td>Tesseract.js library (bundled)</td></tr>
-    <tr><td><code>js/tesseract-core.wasm.js</code></td><td>WebAssembly core for modern browsers</td></tr>
-    <tr><td><code>js/tesseract-core.asm.js</code></td><td>ASM.js fallback for older browsers/Edge</td></tr>
-    <tr><td><code>js/tesseract-ocr.js</code></td><td>All OCR logic: file handling, PDF processing, recognition, export</td></tr>
-    <tr><td><code>style/ocr.css</code></td><td>Styling matching the Sanchaya design system</td></tr>
-  </table>
+<h3>4.1 Overview</h3>
 
-  <h3>tesseract-ocr.js — Key Functions</h3>
-  <ul>
-    <li><strong><code>processPDF(file)</code></strong> — Loads PDF with pdfjsLib, renders each page to canvas at 1.5x scale, runs OCR on all pages with <code>Promise.all</code></li>
-    <li><strong><code>recognizeFile(file)</code></strong> — Creates <code>Tesseract.TesseractWorker</code> with WASM or ASM.js core, runs recognition with progress callbacks</li>
-    <li><strong><code>progressUpdate(packet)</code></strong> — Renders real-time OCR progress in the <code>#log</code> div</li>
-    <li><strong><code>exportTxt / exportDocx</code></strong> — Client-side file download</li>
-  </ul>
+<p>A simpler, no-build-required frontend using jQuery, Bootstrap 4, and Font Awesome. Served by the Flask server at <code>http://localhost:5001/</code>.</p>
 
-  <h3>Core Path Selection</h3>
-  <pre>
-const corePath = window.navigator.userAgent.indexOf("Edge") > -1
-  ? 'js/tesseract-core.asm.js'
-  : 'js/tesseract-core.wasm.js';</pre>
-</section>
+<p>The static app's OCR export features (hOCR parsing, script detection, <code>hocrToLayoutHTML</code>, <code>hocrToStructuredText</code>) are now available in the Vue 3 SPA as native export formats — the Vue app captures <code>hocr</code>, <code>html</code>, and <code>tsv</code> directly from Tesseract.js recognition results and stores them per-page in <code>PageData</code>.</p>
 
-<section id="image-loader">
-  <h2>ImageLoader Component</h2>
+<h3>4.2 Key Files</h3>
 
-  <p><code>src/components/ImageLoader.vue</code> (340 lines) handles all file input for the Vue app.</p>
+<p>| File | Purpose |</p>
+<p>|------|---------|</p>
+<p>| <code>index.html</code> | Main HTML page with layout, controls, and editor |</p>
+<p>| <code>js/tesseract.min.js</code> | Tesseract.js library |</p>
+<p>| <code>js/tesseract-core.wasm.js</code> | WebAssembly core for modern browsers |</p>
+<p>| <code>js/tesseract-core.asm.js</code> | ASM.js fallback for Edge/older browsers |</p>
+<p>| <code>js/tesseract-ocr.js</code> | OCR logic, PDF processing, export functions |</p>
+<p>| <code>style/ocr.css</code> | Styling matching the Sanchaya design system |</p>
 
-  <h3>Input Methods</h3>
-  <ul>
-    <li><strong>Drag &amp; Drop</strong> — <code>@dragover</code>, <code>@dragleave</code>, <code>@drop</code> with visual feedback</li>
-    <li><strong>File Picker</strong> — Hidden <code>&lt;input type="file"&gt;</code> triggered by styled label</li>
-    <li><strong>Clipboard Paste</strong> — <code>document.onpaste</code> event handler</li>
-  </ul>
+<h3>4.3 `js/tesseract-ocr.js`</h3>
 
-  <h3>PDF Processing Flow</h3>
-  <pre>
-1. file.arrayBuffer() → pdfjsLib.getDocument({ data })
-2. pdf.getPage(n) → page.render({ canvasContext, viewport })
-3. canvas.toDataURL("image/png") → pageImages[] 
-4. emit("pdf-loaded", { totalPages, pageImages })</pre>
+<ul>
+<li>File selection and image/PDF handling</li>
+<li><code>processPDF(file)</code>: Renders each PDF page to canvas, runs Tesseract.js OCR on each</li>
+<li><code>recognizeFile(file)</code>: Creates TesseractWorker with WASM or ASM.js core</li>
+<li><code>progressUpdate(packet)</code>: Real-time OCR progress in the <code>#log</code> div</li>
+<li>Export: TXT and DOCX download</li>
+</ul>
 
-  <h3>Emits</h3>
-  <ul>
-    <li><code>pdf-loaded</code> — Total pages + array of page image data URLs</li>
-    <li><code>page-ready</code> — Individual page progress</li>
-    <li><code>file-loaded</code> — Raw File object (for server upload)</li>
-  </ul>
-</section>
+<p>---</p>
 
-<section id="tesseract">
-  <h2>Tesseract.js Integration</h2>
+<h2>5. Backend: Flask Server (`server.py`)</h2>
 
-  <p>Both frontends use <a href="https://tesseract.projectnaptha.com/">Tesseract.js</a> v5.x. The OCR engine runs entirely in the browser via WebAssembly.</p>
+<h3>5.1 Overview</h3>
 
-  <h3>Key Details</h3>
-  <ul>
-    <li><strong>Language data</strong>: Downloaded on first use (~4MB per language), cached in browser</li>
-    <li><strong>Worker model</strong>: Separate worker thread for non-blocking OCR</li>
-    <li><strong>Progress</strong>: Real-time <code>logger</code> callback with status and progress (0–1)</li>
-    <li><strong>Supported</strong>: 16 languages via language codes</li>
-  </ul>
+<p>Lightweight Flask server (251 lines) providing optional storage for uploaded files and OCR results. Serves static frontend and API.</p>
 
-  <h3>Vue App (v5 API)</h3>
-  <pre>
-import Tesseract from "tesseract.js";
-const result = await Tesseract.recognize(imgSrc, "kan+eng", {
-  logger: m => { console.log(m.status, m.progress); }
-});</pre>
+<h3>5.2 Dependencies</h3>
 
-  <h3>Static App (legacy v2/v4 API)</h3>
-  <pre>
-const worker = new Tesseract.TesseractWorker({ corePath: '...' });
-worker.recognize(file, "kan")
-  .progress(packet => progressUpdate(packet))
-  .then(data => progressUpdate({ status: 'done', data }));</pre>
-</section>
+<pre><code>
+Flask==3.0.0
+Flask-CORS==4.0.0
+</code></pre>
 
-<section id="server">
-  <h2>Backend: Flask Server</h2>
+<h3>5.3 API Endpoints</h3>
 
-  <p><code>server.py</code> (251 lines) is a lightweight Flask server that provides:</p>
-  <ul>
-    <li>Optional file upload storage</li>
-    <li>OCR text result logging</li>
-    <li>Static file serving for the simple frontend</li>
-    <li>Research metadata collection</li>
-  </ul>
+<p>| Method | Route | Description |</p>
+<p>|--------|-------|-------------|</p>
+<p>| <code>GET</code> | <code>/</code> | Serve static frontend |</p>
+<p>| <code>POST</code> | <code>/api/upload</code> | Upload an image/PDF file |</p>
+<p>| <code>POST</code> | <code>/api/save-text</code> | Save OCR text result |</p>
+<p>| <code>GET</code> | <code>/api/ocr-results</code> | List last 50 OCR results |</p>
+<p>| <code>GET</code> | <code>/api/ocr-results/<id></code> | Get specific OCR result |</p>
+<p>| <code>GET</code> | <code>/api/stats</code> | Get storage statistics |</p>
+<p>| <code>GET</code> | <code>/api/engines</code> | List available OCR engines |</p>
+<p>| <code>GET</code> | <code>/uploads/<filename></code> | Serve uploaded files |</p>
+<p>| <code>GET</code> | <code>/texts/<filename></code> | Serve text files |</p>
 
-  <h3>Auto-created Directories</h3>
-  <table>
-    <tr><th>Directory</th><th>Purpose</th></tr>
-    <tr><td><code>uploads/</code></td><td>Uploaded images and PDFs</td></tr>
-    <tr><td><code>texts/</code></td><td>OCR output text files (<code>.txt</code>)</td></tr>
-    <tr><td><code>research/</code></td><td>Metadata JSON: <code>ocr_results.json</code>, <code>corrected_words.json</code></td></tr>
-  </table>
+<h3>5.4 Running</h3>
 
-  <h3>File Naming</h3>
-  <pre>
-def generate_unique_filename(original_filename):
-    ext = get_file_extension(original_filename)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    short_hash = hashlib.md5(str(uuid.uuid4()).encode()).hexdigest()[:8]
-    return f"{timestamp}_{short_hash}{ext}"
-# Example: "20260518_183022_a1b2c3d4.png"</pre>
-
-  <h3>Data Retention</h3>
-  <p>The server keeps the last 1000 OCR result entries in <code>ocr_results.json</code>. Each entry stores: id, timestamp, client IP, user agent, language, engine, file_id, text (first 500 chars), text_length, word_count.</p>
-
-  <h3>Running</h3>
-  <pre>
+<pre><code>
 pip install -r requirements.txt
-python server.py
-# → http://localhost:5001</pre>
-</section>
+python server.py  # → http://localhost:5001
+</code></pre>
 
-<section id="api">
-  <h2>API Reference</h2>
+<p>---</p>
 
-  <h3>POST /api/upload</h3>
-  <p>Upload an image or PDF file.</p>
-  <table>
-    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-    <tr><td><code>file</code></td><td>File (multipart)</td><td>The image or PDF file to upload</td></tr>
-  </table>
-  <pre>
-{ "success": true, "file_id": "20260518_183022_a1b2c3d4.png",
-  "original_filename": "doc.png", "file_path": "/uploads/...", "size": 123456 }</pre>
+<h2>6. Deployment &amp; Operations</h2>
 
-  <h3>POST /api/save-text</h3>
-  <p>Save OCR text results.</p>
-  <table>
-    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-    <tr><td><code>text</code></td><td>string</td><td>Recognized text content</td></tr>
-    <tr><td><code>language</code></td><td>string</td><td>Language code (e.g., "kan")</td></tr>
-    <tr><td><code>engine</code></td><td>string</td><td>OCR engine ("tesseract")</td></tr>
-    <tr><td><code>file_id</code></td><td>string</td><td>Optional file reference</td></tr>
-  </table>
-  <pre>
-{ "success": true, "text_id": "uuid", "text_file": "/texts/uuid.txt" }</pre>
+<h3>6.1 Docker</h3>
 
-  <h3>GET /api/ocr-results</h3>
-  <p>List last 50 OCR results.</p>
-  <pre>{ "total": 42, "results": [ { "id": "...", "timestamp": "...", "language": "kan", ... } ] }</pre>
+<pre><code>
+docker-compose up -d  # → http://localhost:5001
+</code></pre>
 
-  <h3>GET /api/ocr-results/:id</h3>
-  <p>Get a specific OCR result by ID.</p>
+<h3>6.2 Coolify</h3>
 
-  <h3>GET /api/stats</h3>
-  <p>Get storage statistics.</p>
-  <pre>{ "total_ocr_results": 42, "unique_ips": 5, "total_uploads": 30,
-  "languages": { "kan": 25, "eng": 17 },
-  "storage": { "uploads": 30, "texts": 42 } }</pre>
+<p><code>coolify.json</code> auto-configures port 5001, persistent volumes, and production environment.</p>
 
-  <h3>GET /api/engines</h3>
-  <p>Available OCR engines.</p>
-  <pre>{ "engines": [{ "id": "tesseract", "name": "Tesseract.js", "type": "client-side", "status": "available" }],
-  "server_storage": "available" }</pre>
-</section>
+<h3>6.3 GitHub Pages</h3>
 
-<section id="deployment">
-  <h2>Deployment</h2>
+<pre><code>
+./deploy.sh  # Builds &amp; deploys ocr-kannada/dist to gh-pages branch
+</code></pre>
 
-  <h3>Quick Start — Full Stack</h3>
-  <pre>
-# Terminal 1: Flask server
-pip install -r requirements.txt
-python server.py              # → http://localhost:5001
+<h3>6.4 GitLab CI</h3>
 
-# Terminal 2: Vue dev server (optional)
-cd ocr-kannada && npm install && npm run dev  # → http://localhost:3000</pre>
+<p><code>.gitlab-ci.yml</code> builds on push to <code>master</code> and deploys to GitLab Pages.</p>
 
-  <h3>Quick Start — Frontend Only</h3>
-  <pre>
-cd ocr-kannada/dist
-python3 -m http.server 8080   # → http://localhost:8080</pre>
+<p>---</p>
 
-  <h3>GitHub Pages</h3>
-  <pre>
-./deploy.sh  # Builds & deploys ocr-kannada/dist to gh-pages branch
-# → https://sanchaya.github.io/ocrsanchaya</pre>
+<h2>7. API Reference</h2>
 
-  <h3>GitLab CI</h3>
-  <p><code>.gitlab-ci.yml</code> builds on push to <code>master</code> and deploys to GitLab Pages with gzip compression.</p>
-</section>
+<h3>`POST /api/upload`</h3>
 
-<section id="docker">
-  <h2>Docker</h2>
+<p>Upload a file. Accepts <code>multipart/form-data</code> with field <code>file</code>.</p>
 
-  <h3>Dockerfile</h3>
-  <pre>
-FROM python:3.11-slim
-WORKDIR /app
-COPY server.py requirements.txt ./
-RUN pip install -r requirements.txt
-EXPOSE 5001
-CMD ["python", "server.py"]</pre>
+<pre><code>
+{ &quot;success&quot;: true, &quot;file_id&quot;: &quot;20260518_183022_a1b2c3d4.png&quot;, &quot;file_path&quot;: &quot;/uploads/...&quot;, &quot;size&quot;: 123456 }
+</code></pre>
 
-  <h3>Docker Compose</h3>
-  <pre>
-docker-compose up -d
-# → http://localhost:5001</pre>
+<h3>`POST /api/save-text`</h3>
 
-  <h3>Persistent Volumes</h3>
-  <pre>
-volumes:
-  ocr-uploads:    → /app/uploads
-  ocr-texts:      → /app/texts
-  ocr-research:   → /app/research</pre>
-</section>
+<p>Save OCR text. Accepts JSON body <code>{ text, language, engine, file_id }</code>.</p>
 
-<section id="data-flow">
-  <h2>Data Flow</h2>
+<pre><code>
+{ &quot;success&quot;: true, &quot;text_id&quot;: &quot;uuid&quot;, &quot;text_file&quot;: &quot;/texts/uuid.txt&quot; }
+</code></pre>
 
-  <h3>OCR Recognition</h3>
-  <pre>
-User selects image/PDF
-       │
-       ▼
-ImageLoader.vue / index.html  →  Loads file, renders to canvas/data URL
-  For PDF: renders each page via pdfjsLib
-       │
-       ▼
-Tesseract.js  →  Client-side OCR in browser (WASM)
-  recognize(image, lang)  →  Downloads language data (~4MB first use)
-       │
-       ▼
-extractPageData + generateStyledHtml
-  → text (plain), hocr, tsv, styledHtml (rich HTML with bold/italic/size)
-       │
-       ▼
-App.vue  →  setEditorContent() polls TinyMCE until ready, sets styled content
-  Progress shown via logger callback
-  Page 1 appears immediately; remaining pages continue in background
-       │ (optional)
-       ▼
-Flask Server  →  POST /api/upload & POST /api/save-text
-  Saves to /texts/{uuid}.txt
-  Logs metadata to research/ocr_results.json</pre>
+<h3>`GET /api/ocr-results`</h3>
 
-  <h3>Word Diff</h3>
-  <pre>
-User edits text in TinyMCE
-       │
-       ▼
-onTextChange() splits original & current text into word sets
-       │
-       ├── Added words (green)  ← in new, not in original
-       └── Removed words (red)  ← in original, not in new
+<pre><code>
+{ &quot;total&quot;: 42, &quot;results&quot;: [ { &quot;id&quot;: &quot;...&quot;, &quot;timestamp&quot;: &quot;...&quot;, ... } ] }
+</code></pre>
 
-Optional: corrected version saved to server via /api/save-text</pre>
-</section>
+<h3>`GET /api/stats`</h3>
 
-<section id="langs">
-  <h2>Supported Languages</h2>
-  <table>
-    <tr><th>Language</th><th>Code</th><th></th><th>Language</th><th>Code</th></tr>
-    <tr><td>Assamese</td><td><code>asm</code></td><td></td><td>Bengali</td><td><code>ben</code></td></tr>
-    <tr><td>Gujarati</td><td><code>guj</code></td><td></td><td>Hindi</td><td><code>hin</code></td></tr>
-    <tr><td>Kannada</td><td><code>kan</code></td><td></td><td>Malayalam</td><td><code>mal</code></td></tr>
-    <tr><td>Marathi</td><td><code>mar</code></td><td></td><td>Odia</td><td><code>ori</code></td></tr>
-    <tr><td>Punjabi</td><td><code>pan</code></td><td></td><td>Sanskrit</td><td><code>san</code></td></tr>
-    <tr><td>Sinhala</td><td><code>sin</code></td><td></td><td>Tamil</td><td><code>tam</code></td></tr>
-    <tr><td>Telugu</td><td><code>tel</code></td><td></td><td>Urdu</td><td><code>urd</code></td></tr>
-    <tr><td>English</td><td><code>eng</code></td><td></td><td>Kannada+English</td><td><code>kan+eng</code></td></tr>
-  </table>
-</section>
+<pre><code>
+{ &quot;total_ocr_results&quot;: 42, &quot;unique_ips&quot;: 5, &quot;languages&quot;: { &quot;kan&quot;: 25 }, ... }
+</code></pre>
 
-<section id="file-ref">
-  <h2>File Reference</h2>
-  <table>
-    <tr><th>File</th><th>Lines</th><th>Language</th><th>Purpose</th></tr>
-    <tr><td><code>server.py</code></td><td>251</td><td>Python</td><td>Flask API + static file server</td></tr>
-    <tr><td><code>requirements.txt</code></td><td>2</td><td>Text</td><td>Python dependencies</td></tr>
-    <tr><td><code>Dockerfile</code></td><td>17</td><td>Dockerfile</td><td>Container definition</td></tr>
-    <tr><td><code>docker-compose.yml</code></td><td>23</td><td>YAML</td><td>Multi-container setup</td></tr>
-    <tr><td><code>coolify.json</code></td><td>35</td><td>JSON</td><td>Coolify deployment config</td></tr>
-    <tr><td><code>deploy.sh</code></td><td>20</td><td>Bash</td><td>GitHub Pages deploy script</td></tr>
-    <tr><td><code>index.html</code></td><td>65</td><td>HTML</td><td>Static frontend entry point</td></tr>
-    <tr><td><code>js/tesseract-ocr.js</code></td><td>236</td><td>JS</td><td>Static frontend OCR logic</td></tr>
-    <tr><td><code>style/ocr.css</code></td><td>429</td><td>CSS</td><td>Static frontend styles</td></tr>
-    <tr><td><code>ocr-kannada/src/App.vue</code></td><td>~1350</td><td>Vue/TS</td><td>Vue app root component</td></tr>
-    <tr><td><code>ocr-kannada/src/components/ImageLoader.vue</code></td><td>340</td><td>Vue/TS</td><td>File loading component</td></tr>
-    <tr><td><code>ocr-kannada/src/main.js</code></td><td>4</td><td>JS</td><td>Vue app bootstrap</td></tr>
-    <tr><td><code>ocr-kannada/vite.config.js</code></td><td>9</td><td>JS</td><td>Vite configuration</td></tr>
-    <tr><td><code>ocr-kannada/package.json</code></td><td>22</td><td>JSON</td><td>npm dependencies</td></tr>
-  </table>
-</section>
+<h3>`GET /api/engines`</h3>
 
-<section id="contributing">
-  <h2>Contributing</h2>
+<pre><code>
+{ &quot;engines&quot;: [{ &quot;id&quot;: &quot;tesseract&quot;, &quot;name&quot;: &quot;Tesseract.js&quot;, &quot;type&quot;: &quot;client-side&quot; }] }
+</code></pre>
 
-  <h3>Prerequisites</h3>
-  <ul>
-    <li>Node.js 16+ (for Vue app)</li>
-    <li>Python 3.9+ (for Flask server)</li>
-    <li>npm or yarn</li>
-  </ul>
+<p>---</p>
 
-  <h3>Technology Stack</h3>
-  <div class="grid-2">
-    <div class="card"><h4>Tesseract.js</h4><p>Client-side OCR via WebAssembly</p></div>
-    <div class="card"><h4>Vue 3 + Vite</h4><p>Frontend framework + build tool</p></div>
-    <div class="card"><h4>TinyMCE</h4><p>Rich text editor with spellcheck</p></div>
-    <div class="card"><h4>PDF.js</h4><p>PDF rendering in browser</p></div>
-    <div class="card"><h4>Flask</h4><p>Python web server (storage API)</p></div>
-    <div class="card"><h4>Docker</h4><p>Containerization</p></div>
-  </div>
+<h2>8. Data Flow</h2>
 
-  <h3>Design Decisions</h3>
-  <ol>
-    <li><strong>Client-side OCR</strong> — All recognition runs in browser. Zero server load. Offline-capable after initial language data download.</li>
-    <li><strong>Two frontends</strong> — Static HTML (no build) vs Vue 3 SPA (richer editor).</li>
-    <li><strong>Optional server</strong> — Backend is optional. Frontends work standalone.</li>
-    <li><strong>Research focus</strong> — Server collects metadata (language, engine, IP) alongside OCR text for accuracy research.</li>
-    <li><strong>Default language: <code>kan+eng</code></strong> — Kannada + English selected by default for mixed-script documents.</li>
-    <li><strong>Styled editor content</strong> — Word-level bold, italic, and font-size from Tesseract.js preserved as HTML tags in TinyMCE; invalidated on user edit.</li>
-    <li><strong>Poll-based editor readiness</strong> — <code>setEditorContent()</code> polls TinyMCE up to 30 times to handle race condition where OCR completes before editor initialization.</li>
-  </ol>
-</section>
+<h3>8.1 OCR Recognition Flow</h3>
 
-<footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px;">
-  <p>OCR Sanchaya — <a href="https://ocr.sanchaya.net">ocr.sanchaya.net</a> — MIT License</p>
-  <p>Part of the <a href="https://sanchaya.org">Sanchaya</a> project by <a href="https://sanchifoundation.org">Sanchi Foundation</a></p>
-</footer>
+<pre><code>
+Image/PDF → ImageLoader (render to canvas) → Tesseract.js (browser OCR)
+→ extractPageData + generateStyledHtml → PageData stored ({ text, hocr, tsv, styledHtml } per page)
+→ Displayed in TinyMCE editor via setEditorContent() (page-linked or combined view)
+→ Optional: saved to Flask server
+</code></pre>
 
-</main>
+<p><strong>Per-page PageData storage</strong>: When <code>doOCRAllPages()</code> processes a multi-page PDF, each page's full recognition result is stored in <code>pageData: PageData[]</code>. Each entry includes <code>text</code> (plain), <code>hocr</code> (hOCR XML), <code>tsv</code> (tab-separated), and <code>styledHtml</code> (rich HTML with bold/italic/font-size from OCR word data). This enables individual page editing, per-format export, and the view-mode toggle between page and combined display.</p>
+
+<h3>8.2 PDF Processing</h3>
+
+<p>PDF → pdfjsLib getDocument → each page rendered to canvas at 1.5x → pageImages[] → OCR each → pageData[]</p>
+
+<h3>8.3 Word Diff</h3>
+
+<p>User edits → <code>onTextChange()</code> compares original vs current word sets → shows added (green) and removed (red) words → updates pageData in page mode</p>
+
+<p>---</p>
+
+<h2>9. Text Formatting &amp; Styled Text Preservation</h2>
+
+<h3>9.1 Line and Paragraph Breaks</h3>
+
+<p>OCR output is converted to HTML with two levels of breaks:</p>
+
+<p><strong>Line breaks (within paragraphs):</strong></p>
+<ul>
+<li>OCR lines (separated by <code>\n</code>) are joined with <code><br></code> for natural text flow</li>
+<li>Lines display on separate rows but without extra vertical spacing</li>
+<li>Example: "First line<br>Second line" renders as continuous paragraph</li>
+</ul>
+
+<p><strong>Paragraph breaks (between paragraphs):</strong></p>
+<ul>
+<li>Paragraph separators (separated by <code>\n\n</code>) are joined with <code><p><br></p><p><br></p></code> </li>
+<li>Creates visual spacing (two empty lines) between logical sections</li>
+<li>Helps distinguish different topics or sections in the document</li>
+</ul>
+
+<p><strong>Implementation:</strong></p>
+<pre><code>
+textToHtml(text) {
+  return text
+    .split(/\n\n+/)                                          // Split by paragraph breaks
+    .map(p =&gt; p.split(&#x27;\n&#x27;).filter(...).join(&#x27;&lt;br&gt;&#x27;))      // Lines: join with &lt;br&gt;
+    .map(p =&gt; `&lt;p&gt;${p}&lt;/p&gt;`)                               // Wrap each paragraph in &lt;p&gt;
+    .join(&#x27;\n&lt;p&gt;&lt;br&gt;&lt;/p&gt;\n&lt;p&gt;&lt;br&gt;&lt;/p&gt;\n&#x27;);               // Join paragraphs with visual spacing
+}
+</code></pre>
+
+<h3>9.2 Styled Text Preservation</h3>
+
+<p><strong>What gets preserved:</strong></p>
+<ul>
+<li><strong>Bold text</strong> — Detected by Tesseract word-level <code>bold</code> flag → wrapped in <code><strong></code> tags</li>
+<li><strong>Italic text</strong> — Detected by Tesseract word-level <code>italic</code> flag → wrapped in <code><em></code> tags  </li>
+<li><strong>Font sizes</strong> — Non-default sizes (not 11px) → wrapped in <code><span style="font-size:Xpx"></code> tags</li>
+</ul>
+
+<p><strong>Where styling appears:</strong></p>
+<ul>
+<li><strong>Editor display</strong> — <code>styledHtml</code> shows formatting inline for visual reference during editing</li>
+<li><strong>HTML export</strong> — Generated with <code><strong></code>, <code><em></code>, and <code><span style="..."></code> tags</li>
+<li><strong>TXT/DOCX export</strong> — Plain text (formatting lost, but text content preserved)</li>
+<li><strong>Manual edits</strong> — When user edits text in the editor, styling is cleared (<code>styledHtml</code> invalidated) since the user's changes make the OCR styling unreliable</li>
+</ul>
+
+<p><strong>Generation flow:</strong></p>
+<pre><code>
+OCR result → generateStyledHtml()
+  ├─ Extract paragraphs from result.data.paragraphs
+  ├─ Build base HTML with textToHtml() (proper breaks)
+  ├─ Filter result.data.words for styled entries (bold || italic || font_size)
+  └─ Wrap styled words sequentially with &lt;strong&gt;/&lt;em&gt;/&lt;span&gt; tags
+  → Returns styled HTML with preserved formatting and proper breaks
+</code></pre>
+
+<p>---</p>
+
+<h2>9. Contributing &amp; Development</h2>
+
+<h3>10.1 Prerequisites</h3>
+<ul>
+<li>Node.js 16+</li>
+<li>Python 3.9+</li>
+</ul>
+
+<h3>10.2 Tech Stack</h3>
+<p>| Technology | Purpose |</p>
+<p>|-----------|---------|</p>
+<p>| Tesseract.js | Client-side OCR via WebAssembly |</p>
+<p>| Vue 3 + Vite | Frontend framework + build tool |</p>
+<p>| TinyMCE | Rich text editor with spellcheck |</p>
+<p>| PDF.js | PDF rendering in browser |</p>
+<p>| Flask | Python web server (storage API) |</p>
+
+<h3>10.3 Design Decisions</h3>
+<p>1. <strong>Client-side OCR</strong> — Zero server load, offline-capable after language data download</p>
+<p>2. <strong>Two frontends</strong> — Static HTML (no build) vs Vue 3 SPA (rich editor)</p>
+<p>3. <strong>Optional server</strong> — Backend is optional; frontends work standalone</p>
+<p>4. <strong>Multi-format export</strong> — TXT, DOCX, hOCR, HTML layout (with styled HTML), TSV from Tesseract.js results</p>
+<p>5. <strong>Default language: <code>kan+eng</code></strong> — Kannada + English selected by default for mixed-script documents</p>
+<p>6. <strong>Styled editor content</strong> — Word-level bold, italic, and font-size from Tesseract.js preserved as HTML tags in TinyMCE; invalidated on user edit</p>
+<p>7. <strong>Poll-based editor readiness</strong> — <code>setEditorContent()</code> polls TinyMCE up to 30 times to handle race condition where OCR completes before editor initialization</p>
+
+<p>---</p>
+
+<h2>Appendix: File Reference</h2>
+
+<p>| File Path | Lines | Language | Purpose |</p>
+<p>|-----------|-------|----------|---------|</p>
+<p>| <code>server.py</code> | 251 | Python | Flask API + static file server |</p>
+<p>| <code>index.html</code> | 65 | HTML | Static frontend entry point |</p>
+<p>| <code>js/tesseract-ocr.js</code> | 236 | JS | Static frontend OCR logic |</p>
+<p>| <code>style/ocr.css</code> | 429 | CSS | Static frontend styles |</p>
+<p>| <code>ocr-kannada/src/App.vue</code> | ~1184 | Vue/TS | Vue app root component |</p>
+<p>| <code>ocr-kannada/src/components/ImageLoader.vue</code> | 340 | Vue/TS | File loading component |</p>
+<p>| <code>ocr-kannada/src/main.js</code> | 4 | JS | Vue app bootstrap |</p>
+<p>| <code>ocr-kannada/vite.config.js</code> | 9 | JS | Vite configuration |</p>
+<p>| <code>ocr-kannada/package.json</code> | 22 | JSON | npm dependencies |</p>
+<p>| <code>Dockerfile</code> | 17 | Dockerfile | Container definition |</p>
+<p>| <code>docker-compose.yml</code> | 23 | YAML | Multi-container setup |</p>
+
 </div>
-
 </body>
 </html>

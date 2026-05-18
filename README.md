@@ -15,7 +15,7 @@ A browser-based Optical Character Recognition (OCR) application for Kannada and 
 - **Per-Page Editing** — OCR text is stored per page; navigate pages to view and edit each page's text individually
 - **Page View / Combined View** — Toggle between per-page editing and a combined view of all pages
 - **Real-time Progress** — See OCR progress for each page
-- **Rich Text Editor** — Built-in TinyMCE editor with proper paragraph/line break rendering, Kannada spell checker, and OCR style preservation
+- **Rich Text Editor** — Built-in TinyMCE editor with styled text (bold, italic, font sizes) preserved from OCR, proper paragraph and line break rendering for natural readability
 - **Word Diff** — Track changes made to OCR'd text (added/removed words highlighted)
 - **Unique Words** — Extract and copy unique words from OCR'd text
 - **Export Options** — Export as TXT, DOCX, hOCR, HTML layout (with preserved styling), or TSV

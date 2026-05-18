@@ -257,7 +257,7 @@ const textToHtml = (text: string): string => {
     .map(p => p.split('\n').filter(l => l.trim()).join('<br>'))
     .filter(p => p.trim())
     .map(p => `<p>${p}</p>`)
-    .join('\n<p><br></p>\n');
+    .join('\n<p><br></p>\n<p><br></p>\n');
 };
 
 const extractPageData = (result: any): PageData => {
@@ -495,7 +495,7 @@ export default defineComponent({
           state.originalText = page.text;
 
           saveOCRToServer(page.text, state.language, state.ocrEngine, state.currentFileId || undefined);
-          state.text = textToHtml('\n' + page.text + '\n');
+          state.text = (page.styledHtml && page.styledHtml.trim().length > 0) ? page.styledHtml : textToHtml('\n' + page.text + '\n');
           nextTick(() => setEditorContent(state.text));
         } catch (e: any) {
           console.error(e);
@@ -535,7 +535,7 @@ export default defineComponent({
             state.viewMode = 'page';
             state.displayPageNum = 1;
             state.originalText = page.text;
-            state.text = textToHtml('\n' + page.text + '\n');
+            state.text = (page.styledHtml && page.styledHtml.trim().length > 0) ? page.styledHtml : textToHtml('\n' + page.text + '\n');
             nextTick(() => setEditorContent(state.text));
           }
         } catch (e: any) {
@@ -564,6 +564,7 @@ export default defineComponent({
     const getStyledHtml = (idx: number): string => {
       const pd = state.pageData[idx];
       if (!pd) return '';
+      if (pd.styledHtml && pd.styledHtml.trim().length > 0) return pd.styledHtml;
       return textToHtml('\n' + pd.text + '\n');
     };
 
