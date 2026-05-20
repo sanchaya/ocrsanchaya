@@ -4,7 +4,7 @@
       <div class="logo-section">
         <img src="/img/sanchaya-logo.png" alt="Sanchaya" class="header-logo">
         <div class="title-section">
-          <h1>ಕನ್ನಡ ಓಸಿಆರ್ | Kannada OCR</h1>
+          <h1>OCR | Optical Character Recognition</h1>
           <span class="subtitle">Optical Character Recognition</span>
         </div>
       </div>
@@ -32,25 +32,13 @@
           </select>
         </div>
         <div class="language-select">
-          <label>Language:</label>
-          <select v-model="language">
-            <option value="asm">Assamese</option>
-            <option value="ben">Bengali</option>
-            <option value="guj">Gujarati</option>
-            <option value="hin">Hindi</option>
-            <option value="kan">Kannada</option>
-            <option value="mal">Malayalam</option>
-            <option value="mar">Marathi</option>
-            <option value="ori">Odia</option>
-            <option value="pan">Punjabi</option>
-            <option value="san">Sanskrit</option>
-            <option value="sin">Sinhala</option>
-            <option value="tam">Tamil</option>
-            <option value="tel">Telugu</option>
-            <option value="urd">Urdu</option>
-            <option value="eng">English</option>
-            <option value="kan+eng">Kannada + English</option>
-          </select>
+          <label>Languages:</label>
+          <div class="lang-checkboxes">
+            <label v-for="opt in languageOptions" :key="opt.code" class="lang-cb-label">
+              <input type="checkbox" :value="opt.code" v-model="selectedLanguages">
+              {{ opt.name }}
+            </label>
+          </div>
         </div>
       </div>
       <div class="engine-info" v-if="ocrEngineInfo">{{ ocrEngineInfo }}</div>
@@ -84,6 +72,7 @@
         <button @click="viewOcrFormat('hocr')" class="btn-export-sm">View hOCR</button>
         <button @click="viewOcrFormat('html')" class="btn-export-sm">View HTML</button>
         <button @click="viewOcrFormat('tsv')" class="btn-export-sm">View TSV</button>
+        <button v-if="detectedTables.length > 0" @click="viewTable" class="btn-export-sm table-btn">View Table</button>
       </div>
     </div>
     <div class="text-container">
@@ -130,13 +119,13 @@
           <button @click="showUserGuide = false" class="close-btn">&times;</button>
         </div>
         <div class="user-guide-content">
-          <h3>Kannada OCR — How to Use | ಬಳಕೆ ಮಾರ್ಗದರ್ಶಿ</h3>
+          <h3>OCR — How to Use | ಬಳಕೆ ಮಾರ್ಗದರ್ಶಿ</h3>
 
           <h4>1. Upload an Image or PDF</h4>
           <p>Drag & drop a file onto the left panel, click <strong>Choose file</strong>, or paste an image from clipboard. Supported formats: JPG, PNG, GIF, BMP, TIFF, PDF.</p>
 
           <h4>2. Select Language</h4>
-          <p>Choose the document language from the dropdown. Default is <strong>Kannada + English</strong> for mixed-script documents. 14+ Indian languages supported.</p>
+          <p>Select one or more languages using the checkboxes. Default is <strong>Kannada + English</strong> for mixed-script documents. 14+ Indian languages supported.</p>
 
           <h4>3. Recognize Text</h4>
           <p>Click <strong>Recognize</strong> to OCR the current image. For multi-page PDFs, click <strong>Recognize All Pages</strong> — page 1 appears in the editor immediately while remaining pages process in the background. Progress is shown in real-time.</p>
@@ -167,7 +156,7 @@
 
           <h4>9. Tips & Notes</h4>
           <ul>
-            <li><strong>Language combo:</strong> For mixed Kannada+English documents, use <code>kan+eng</code> (the default).</li>
+            <li><strong>Multi-language:</strong> Select multiple languages via checkboxes (e.g., Kannada + English for mixed-script documents). Languages are combined automatically for OCR.</li>
             <li><strong>Styling:</strong> Bold, italic, and font-size differences are detected by Tesseract.js and preserved in the editor. Editing a page removes the original styling since your corrections replace the OCR output.</li>
             <li><strong>Page 1 speed:</strong> In multi-page PDFs, page 1 appears as soon as its OCR completes. You can start proofreading while other pages are still being processed.</li>
             <li><strong>All processing is client-side:</strong> OCR runs entirely in your browser via Tesseract.js (WebAssembly). Nothing is uploaded to any server unless server storage is explicitly configured.</li>
@@ -186,6 +175,18 @@
           <button @click="showOcrViewer = false" class="close-btn">&times;</button>
         </div>
         <textarea class="ocr-viewer-textarea" readonly :value="ocrViewerContent"></textarea>
+      </div>
+    </div>
+    <div v-if="showTableViewer" class="ocr-viewer-overlay" @click.self="showTableViewer = false">
+      <div class="ocr-viewer-modal">
+        <div class="ocr-viewer-header">
+          <strong>Detected Table</strong>
+          <div class="header-actions">
+            <button @click="copyTableContent" class="btn-export-sm">Copy</button>
+            <button @click="showTableViewer = false" class="close-btn">&times;</button>
+          </div>
+        </div>
+        <pre class="table-viewer-content">{{ tableViewerContent }}</pre>
       </div>
     </div>
   </main>
@@ -270,15 +271,171 @@ const extractPageData = (result: any): PageData => {
   };
 };
 
+interface WordBox {
+  text: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+interface DetectedTable {
+  rows: string[][];
+  colCount: number;
+  rowCount: number;
+  markdown: string;
+  tsv: string;
+}
+
+function parseHocrWords(hocr: string): WordBox[] {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(hocr, 'text/html');
+  const words: WordBox[] = [];
+  const spans = doc.querySelectorAll('.ocrx_word');
+  spans.forEach(el => {
+    const title = el.getAttribute('title') || '';
+    const m = title.match(/bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+    if (m) {
+      const text = (el.textContent || '').trim();
+      if (text) {
+        words.push({
+          text,
+          x0: parseInt(m[1]),
+          y0: parseInt(m[2]),
+          x1: parseInt(m[3]),
+          y1: parseInt(m[4]),
+        });
+      }
+    }
+  });
+  return words;
+}
+
+function groupIntoLines(words: WordBox[]): WordBox[][] {
+  if (words.length === 0) return [];
+  const sorted = [...words].sort((a, b) => a.y0 - b.y0);
+  const lines: WordBox[][] = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    const prevY = lines[lines.length - 1][0].y0;
+    const h = sorted[i].y1 - sorted[i].y0;
+    if (Math.abs(sorted[i].y0 - prevY) < Math.max(h * 1.5, 8)) {
+      lines[lines.length - 1].push(sorted[i]);
+    } else {
+      lines.push([sorted[i]]);
+    }
+  }
+  return lines;
+}
+
+function detectColumnBreaks(words: WordBox[]): number[] {
+  if (words.length < 2) return [];
+  const sorted = [...words].sort((a, b) => a.x0 - b.x0);
+  const gaps: { gap: number; mid: number }[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const gap = sorted[i + 1].x0 - sorted[i].x1;
+    gaps.push({ gap, mid: (sorted[i].x1 + sorted[i + 1].x0) / 2 });
+  }
+  const sortedGaps = [...gaps].sort((a, b) => a.gap - b.gap);
+  const median = sortedGaps[Math.floor(sortedGaps.length / 2)].gap;
+  const threshold = Math.max(median * 2.5, 12);
+  return gaps.filter(g => g.gap > threshold).map(g => g.mid);
+}
+
+function clusterValues(values: number[], tolerance: number): number[] {
+  const sorted = [...values].sort((a, b) => a - b);
+  const clusters: number[] = [];
+  for (const v of sorted) {
+    let found = false;
+    for (let i = 0; i < clusters.length; i++) {
+      if (Math.abs(v - clusters[i]) <= tolerance) {
+        clusters[i] = (clusters[i] + v) / 2;
+        found = true;
+        break;
+      }
+    }
+    if (!found) clusters.push(v);
+  }
+  return clusters.sort((a, b) => a - b);
+}
+
+function detectTablesFromHocr(hocr: string): DetectedTable[] {
+  if (!hocr) return [];
+  const words = parseHocrWords(hocr);
+  if (words.length < 8) return [];
+
+  const lines = groupIntoLines(words).filter(l => l.length >= 2);
+  if (lines.length < 3) return [];
+
+  const lineData: { words: WordBox[]; breaks: number[] }[] = [];
+  for (const line of lines) {
+    const breaks = detectColumnBreaks(line);
+    if (breaks.length >= 1) lineData.push({ words: line, breaks });
+  }
+  if (lineData.length < 2) return [];
+
+  const allBreaks = lineData.flatMap(d => d.breaks);
+  const colPositions = clusterValues(allBreaks, 15);
+  if (colPositions.length < 1) return [];
+
+  const tables: DetectedTable[] = [];
+  const rows: string[][] = [];
+
+  for (const ld of lineData) {
+    const sorted = [...ld.words].sort((a, b) => a.x0 - b.x0);
+    const row = new Array(colPositions.length + 1).fill('');
+    for (const word of sorted) {
+      let colIdx = 0;
+      for (let i = 0; i < colPositions.length; i++) {
+        if (word.x0 > colPositions[i]) colIdx = i + 1;
+      }
+      if (row[colIdx]) row[colIdx] += ' ' + word.text;
+      else row[colIdx] = word.text;
+    }
+    rows.push(row);
+  }
+
+  if (rows.length < 2) return [];
+
+  const colCount = colPositions.length + 1;
+  const mdHeader = '| ' + rows[0].map(c => c.trim()).join(' | ') + ' |';
+  const mdSep = '| ' + new Array(colCount).fill('---').join(' | ') + ' |';
+  const mdRows = rows.slice(1)
+    .map(r => '| ' + r.map(c => c.trim()).join(' | ') + ' |')
+    .join('\n');
+  const markdown = mdHeader + '\n' + mdSep + '\n' + mdRows;
+  const tsv = rows.map(r => r.join('\t')).join('\n');
+
+  tables.push({ rows, colCount, rowCount: rows.length, markdown, tsv });
+  return tables;
+}
+
 const languageMap: Record<string, Record<string, string>> = {
   tesseract: {
-    asm: 'asm', ben: 'ben', guj: 'guj', hin: 'hin', kan: 'kan', mal: 'mal', mar: 'mar', ori: 'ori', pan: 'pan', san: 'san', sin: 'sin', tam: 'tam', tel: 'tel', urd: 'urd', eng: 'eng', 'kan+eng': 'kan+eng'
+    asm: 'asm', ben: 'ben', guj: 'guj', hin: 'hin', kan: 'kan', mal: 'mal', mar: 'mar', ori: 'ori', pan: 'pan', san: 'san', sin: 'sin', tam: 'tam', tel: 'tel', urd: 'urd', eng: 'eng'
   }
 };
 
 const engineInfo: Record<string, string> = {
   tesseract: 'Tesseract.js - Browser-based, ~4MB download, 100+ languages'
 };
+
+const languageOptions = [
+  { code: 'asm', name: 'Assamese' },
+  { code: 'ben', name: 'Bengali' },
+  { code: 'guj', name: 'Gujarati' },
+  { code: 'hin', name: 'Hindi' },
+  { code: 'kan', name: 'Kannada' },
+  { code: 'mal', name: 'Malayalam' },
+  { code: 'mar', name: 'Marathi' },
+  { code: 'ori', name: 'Odia' },
+  { code: 'pan', name: 'Punjabi' },
+  { code: 'san', name: 'Sanskrit' },
+  { code: 'sin', name: 'Sinhala' },
+  { code: 'tam', name: 'Tamil' },
+  { code: 'tel', name: 'Telugu' },
+  { code: 'urd', name: 'Urdu' },
+  { code: 'eng', name: 'English' },
+];
 
 let tesseractWorker: any = null;
 
@@ -288,7 +445,7 @@ const loadTesseractWorker = async (lang: string) => {
   state.status = 'Loading Tesseract engine...';
   try {
     const { createWorker } = Tesseract;
-    tesseractWorker = await createWorker(languageMap['tesseract'][lang] || 'eng');
+    tesseractWorker = await createWorker(languageMap['tesseract'][lang] || lang);
     return tesseractWorker;
   } catch (e) {
     console.error('Tesseract worker error:', e);
@@ -349,7 +506,7 @@ export default defineComponent({
       showProgress: false,
       text: "",
       originalText: "",
-      language: "kan+eng",
+      selectedLanguages: ["kan", "eng"],
       ocrEngine: "tesseract",
       isEngineLoading: false,
       ocrEngineInfo: "",
@@ -370,6 +527,9 @@ export default defineComponent({
       showOcrViewer: false,
       ocrViewerTitle: "",
       ocrViewerContent: "",
+      detectedTables: [] as DetectedTable[],
+      showTableViewer: false,
+      tableViewerContent: "",
       editorConfig: {
         height: 600,
         menubar: true,
@@ -483,7 +643,8 @@ export default defineComponent({
         state.ocrEngineInfo = engineInfo[state.ocrEngine] || '';
 
         try {
-          const page = await doOCRWithEngine(img.src, state.language, state.ocrEngine, (m) => {
+          const langStr = state.selectedLanguages.join('+');
+        const page = await doOCRWithEngine(img.src, langStr, state.ocrEngine, (m) => {
             console.log(m);
             state.progress = m.progress || 0;
             state.status = m.status || "Processing...";
@@ -494,8 +655,10 @@ export default defineComponent({
           state.viewMode = 'page';
           state.originalText = page.text;
 
-          saveOCRToServer(page.text, state.language, state.ocrEngine, state.currentFileId || undefined);
+          saveOCRToServer(page.text, langStr, state.ocrEngine, state.currentFileId || undefined);
           state.text = (page.styledHtml && page.styledHtml.trim().length > 0) ? page.styledHtml : textToHtml('\n' + page.text + '\n');
+          const tables = detectTablesFromHocr(page.hocr);
+          state.detectedTables = tables;
           nextTick(() => setEditorContent(state.text));
         } catch (e: any) {
           console.error(e);
@@ -519,13 +682,14 @@ export default defineComponent({
       state.ocrEngineInfo = engineInfo[state.ocrEngine] || '';
       state.pageData = [];
 
+      const langStr = state.selectedLanguages.join('+');
       for (let i = 0; i < pageImages.length; i++) {
         state.currentPage = i + 1;
         state.totalPages = pageImages.length;
         state.status = `Processing page ${i + 1} of ${pageImages.length}...`;
 
         try {
-          const page = await doOCRWithEngine(pageImages[i], state.language, state.ocrEngine, (m) => {
+          const page = await doOCRWithEngine(pageImages[i], langStr, state.ocrEngine, (m) => {
             state.progress = m.progress || 0;
           });
 
@@ -551,7 +715,7 @@ export default defineComponent({
       const fullText = state.pageData.map((p, i) =>
         `--- Page ${i + 1} of ${pageImages.length} ---\n\n${p.text.trim()}\n\n`
       ).join('');
-      saveOCRToServer(fullText, state.language, state.ocrEngine, state.currentFileId || undefined);
+      saveOCRToServer(fullText, langStr, state.ocrEngine, state.currentFileId || undefined);
 
       if (state.displayPageNum > 0 && state.pageData[state.displayPageNum - 1]) {
         const pi = state.displayPageNum - 1;
@@ -742,6 +906,19 @@ export default defineComponent({
       state.showOcrViewer = true;
     };
 
+    const viewTable = () => {
+      if (state.detectedTables.length === 0) { alert("No tables detected!"); return; }
+      const table = state.detectedTables[0];
+      state.tableViewerContent = table.markdown;
+      state.showTableViewer = true;
+    };
+
+    const copyTableContent = () => {
+      navigator.clipboard.writeText(state.tableViewerContent).then(() => {
+        alert("Table copied to clipboard!");
+      });
+    };
+
     const extractUniqueWords = () => {
       const plainText = getPlainText();
       if (!plainText) {
@@ -819,7 +996,7 @@ export default defineComponent({
       state.originalText = state.text;
     };
 
-    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText };
+    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions };
   },
 });
 </script>
@@ -1038,6 +1215,35 @@ main {
   outline: none;
   border-color: var(--text-color3);
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.lang-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 300px;
+}
+
+.lang-cb-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.lang-cb-label:hover {
+  border-color: var(--text-color3);
+  background: rgba(67, 97, 238, 0.05);
+}
+
+.lang-cb-label input[type="checkbox"] {
+  accent-color: var(--text-color3);
 }
 
 .button-group {
@@ -1348,6 +1554,33 @@ footer a:hover {
 }
 
 .ocr-viewer-textarea:focus { outline: none; }
+
+.table-viewer-content {
+  flex: 1; width: 100%; padding: 16px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 13px; border: none;
+  background: #1a1a2e; color: #e0e0e0;
+  line-height: 1.6;
+  overflow: auto;
+  white-space: pre;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-btn {
+  border-color: #28a745 !important;
+  color: #28a745 !important;
+}
+
+.table-btn:hover {
+  background: #28a745 !important;
+  color: white !important;
+}
 
 @media (max-width: 1024px) {
   main {

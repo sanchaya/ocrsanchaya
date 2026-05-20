@@ -85,6 +85,36 @@ progress[value="1"] {
   opacity: 0.5;
 }
 
+.lang-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lang-cb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  margin: 0;
+  font-weight: normal;
+}
+
+.lang-cb:hover {
+  border-color: var(--text-color3);
+  background: rgba(67, 97, 238, 0.05);
+}
+
+.lang-cb input[type="checkbox"] {
+  accent-color: var(--text-color3);
+}
+
 select {
   padding: 12px 5px;
   width: 209px;

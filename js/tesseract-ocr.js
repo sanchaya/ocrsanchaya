@@ -1,3 +1,11 @@
+function getSelectedLangs() {
+	var checked = [];
+	$('#langsel input[type="checkbox"]:checked').each(function() {
+		checked.push($(this).val());
+	});
+	return checked.length > 0 ? checked.join('+') : 'eng';
+}
+
 $( document ).ready(function() {
 	var inputs = document.querySelectorAll( '.inputfile' );
 	Array.prototype.forEach.call( inputs, function( input )
@@ -94,7 +102,7 @@ function processPDF(file) {
 									? 'js/tesseract-core.asm.js'
 									: 'js/tesseract-core.wasm.js'
 							});
-							tempWorker.recognize(img, $("#langsel").val())
+							tempWorker.recognize(img, getSelectedLangs())
 								.then(function(result) {
 									fullText += result.data.text + "\n\n";
 									resolve();
@@ -184,7 +192,7 @@ function recognizeFile(file){
 	});
 
 	worker.recognize(file,
-		$("#langsel").val()
+		getSelectedLangs()
 	)
 		.progress(function(packet){
 			console.info(packet)

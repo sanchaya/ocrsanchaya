@@ -55,12 +55,14 @@ window.initHOCRPatch = async function() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
 
-    let lang = 'kan+eng';
-    const langSelect = document.querySelector('.language-select select');
-    if (langSelect && langSelect.value) {
-      lang = langSelect.value;
-    }
-    if (lang === 'tesseract' || !lang) lang = 'kan+eng';
+    const getSelectedLangs = () => {
+      const checked = [];
+      document.querySelectorAll('#langsel input[type="checkbox"]:checked').forEach(function(cb) {
+        checked.push(cb.value);
+      });
+      return checked.length > 0 ? checked.join('+') : 'kan+eng';
+    };
+    let lang = getSelectedLangs();
     console.log('Language:', lang);
     
     try {

@@ -2,8 +2,12 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Kannada OCR | ಕನ್ನಡ ಓಸಿಆರ್</title>
+    <title>OCR | Optical Character Recognition</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="/img/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/img/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/img/icon-512.png">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="style/ocr.css">
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -19,15 +23,14 @@
           <div class="container mt-3">
 			  <div class="row">
 				  <div class="col-12 col-md-4 ">
-						<select id="langsel">
-							<option value='kan'     selected> Kannada               </option>
-							<option value='kan+eng+hin'> Kannada + English + Devanagari </option>
-							<option value='hin'     > Hindi                 </option>
-							<option value='san'    > Sanskrit              </option>
-							<option value='eng'    > English               </option>
-							<option value='tam'    > Tamil                 </option>
-							<option value='tel'    > Telugu                </option>
-						</select>
+						<div id="langsel" class="lang-checkboxes">
+							<label class="lang-cb"><input type="checkbox" name="lang" value="kan" checked> Kannada</label>
+							<label class="lang-cb"><input type="checkbox" name="lang" value="hin"> Hindi</label>
+							<label class="lang-cb"><input type="checkbox" name="lang" value="san"> Sanskrit</label>
+							<label class="lang-cb"><input type="checkbox" name="lang" value="eng"> English</label>
+							<label class="lang-cb"><input type="checkbox" name="lang" value="tam"> Tamil</label>
+							<label class="lang-cb"><input type="checkbox" name="lang" value="tel"> Telugu</label>
+						</div>
 				  </div>
 				  <div class="col-12 col-md-4 mt-3 mt-md-0">
 						<div class="box">
