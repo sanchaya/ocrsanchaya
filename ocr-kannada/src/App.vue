@@ -42,6 +42,10 @@
         </div>
       </div>
       <div class="engine-info" v-if="ocrEngineInfo">{{ ocrEngineInfo }}</div>
+      <label class="styling-toggle">
+        <input type="checkbox" v-model="preserveStyling">
+        Preserve styling (bold, italic, font size)
+      </label>
       <div class="button-group">
         <button @click="doOCR" class="btn-primary" :disabled="isEngineLoading">
           <span v-if="isEngineLoading">Loading Engine...</span>
@@ -134,7 +138,7 @@
           <p>Use <strong>← Prev</strong> and <strong>Next →</strong> buttons below the image to switch pages. The editor automatically shows the OCR text for the current page.</p>
 
           <h4>5. Edit & Proofread</h4>
-          <p>Use the built-in TinyMCE editor to correct OCR errors. <strong>Original bold, italic, and font sizes from the document are preserved</strong>. The spell checker (Kannada and English) highlights misspelled words. Changes are tracked in the <strong>Word Changes</strong> panel below the editor.</p>
+          <p>Use the built-in TinyMCE editor to correct OCR errors. <strong>Original bold, italic, and font sizes from the document are preserved</strong> (toggle off to see plain text). The spell checker (Kannada and English) highlights misspelled words. Changes are tracked in the <strong>Word Changes</strong> panel below the editor.</p>
 
           <h4>6. View Modes</h4>
           <p><strong>Page View</strong> — Edit each page's text individually. Switch pages to see and edit each one.<br>
@@ -523,6 +527,7 @@ export default defineComponent({
       pageData: [] as PageData[],
       viewMode: "page" as "page" | "combined",
       displayPageNum: 0,
+      preserveStyling: true,
       showUserGuide: false,
       showOcrViewer: false,
       ocrViewerTitle: "",
@@ -656,7 +661,7 @@ export default defineComponent({
           state.originalText = page.text;
 
           saveOCRToServer(page.text, langStr, state.ocrEngine, state.currentFileId || undefined);
-          state.text = (page.styledHtml && page.styledHtml.trim().length > 0) ? page.styledHtml : textToHtml('\n' + page.text + '\n');
+          state.text = resolvePageHtml(page);
           const tables = detectTablesFromHocr(page.hocr);
           state.detectedTables = tables;
           nextTick(() => setEditorContent(state.text));
@@ -699,7 +704,7 @@ export default defineComponent({
             state.viewMode = 'page';
             state.displayPageNum = 1;
             state.originalText = page.text;
-            state.text = (page.styledHtml && page.styledHtml.trim().length > 0) ? page.styledHtml : textToHtml('\n' + page.text + '\n');
+            state.text = resolvePageHtml(page);
             nextTick(() => setEditorContent(state.text));
           }
         } catch (e: any) {
@@ -725,11 +730,17 @@ export default defineComponent({
       }
     };
 
+    const resolvePageHtml = (page: PageData): string => {
+      if (state.preserveStyling && page.styledHtml && page.styledHtml.trim().length > 0) {
+        return page.styledHtml;
+      }
+      return textToHtml('\n' + page.text + '\n');
+    };
+
     const getStyledHtml = (idx: number): string => {
       const pd = state.pageData[idx];
       if (!pd) return '';
-      if (pd.styledHtml && pd.styledHtml.trim().length > 0) return pd.styledHtml;
-      return textToHtml('\n' + pd.text + '\n');
+      return resolvePageHtml(pd);
     };
 
     const handlePageChanged = (pageNum: number) => {
@@ -1243,6 +1254,20 @@ main {
 }
 
 .lang-cb-label input[type="checkbox"] {
+  accent-color: var(--text-color3);
+}
+
+.styling-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--span-color);
+  cursor: pointer;
+  user-select: none;
+}
+
+.styling-toggle input[type="checkbox"] {
   accent-color: var(--text-color3);
 }
 
