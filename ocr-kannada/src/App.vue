@@ -262,7 +262,7 @@ const textToHtml = (text: string): string => {
     .map(p => p.split('\n').filter(l => l.trim()).join('<br>'))
     .filter(p => p.trim())
     .map(p => `<p>${p}</p>`)
-    .join('\n<p><br></p>\n<p><br></p>\n');
+    .join('\n<p><br></p>\n');
 };
 
 const extractPageData = (result: any): PageData => {
