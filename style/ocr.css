@@ -447,6 +447,75 @@ p a:hover {
   margin-bottom: 15px;
 }
 
+/* Image Crop Tool Styles */
+.image-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+#crop-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: crosshair;
+  z-index: 5;
+}
+
+.crop-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.crop-controls button {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--third-color);
+  color: var(--text-color1);
+}
+
+.crop-controls button:hover {
+  border-color: var(--text-color3);
+  background-color: rgba(67, 97, 238, 0.05);
+}
+
+.crop-controls button.active {
+  background: var(--primary-gradient);
+  color: white;
+  border-color: #4361ee;
+}
+
+.selection-copy-btn {
+  position: absolute;
+  z-index: 15;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+  transition: all 0.2s ease;
+}
+
+.selection-copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4);
+}
+
 .footer-links a {
   color: var(--text-color3);
   text-decoration: none;

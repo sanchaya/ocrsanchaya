@@ -180,6 +180,14 @@ function progressUpdate(packet){
 			$(".fas").addClass('fa-check')
 			
 			$("#editable-text").val(packet.data.text.replace(/\n\s*\n/g, '\n'));
+			
+			// Pass OCR results to crop tool for region extraction
+			if (typeof cropTool !== 'undefined' && cropTool) {
+				cropTool.setOCRResults(packet.data);
+				// Show crop controls
+				const cropControls = document.querySelector('.crop-controls');
+				if (cropControls) cropControls.style.display = 'block';
+			}
 		}
 
 		log.insertBefore(line, log.firstChild)

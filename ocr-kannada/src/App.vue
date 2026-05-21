@@ -21,6 +21,12 @@
 <div class="img-container">
         <div class="img-wrapper">
           <ImageLoader @pdf-loaded="handlePdfLoaded" @file-loaded="handleFileLoaded" @page-changed="handlePageChanged" />
+          <CropTool 
+            :image="currentImage"
+            :words="currentPageWords"
+            @copy-text="onCropTextCopied"
+            @copy-text="appendTextToEditor"
+          />
           <canvas class="ocr-overlay-canvas" v-show="showOverlay"
             @mousemove="onCanvasHover" @click="onCanvasClick" @mouseleave="onCanvasLeave" />
           <div v-if="hoveredWord" class="word-tooltip" :style="tooltipStyle">
@@ -242,8 +248,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, ref, nextTick } from "vue";
+import { defineComponent, reactive, toRefs, ref, nextTick, watch } from "vue";
 import ImageLoader from "./components/ImageLoader.vue";
+import CropTool from "./components/CropTool.vue";
 import Tesseract from "tesseract.js";
 import axios from "axios";
 import Editor from "@tinymce/tinymce-vue";
@@ -577,6 +584,7 @@ export default defineComponent({
   data: () => ({}),
   components: {
     ImageLoader,
+    CropTool,
     Editor,
   },
   setup() {
@@ -615,6 +623,8 @@ export default defineComponent({
       detectedTables: [] as DetectedTable[],
       showTableViewer: false,
       tableViewerContent: "",
+      currentImage: null as HTMLImageElement | null,
+      currentPageWords: [] as WordBox[],
       editorConfig: {
         height: 600,
         menubar: true,
@@ -1384,7 +1394,40 @@ export default defineComponent({
       return null;
     };
 
-    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions, onCanvasHover, onCanvasClick, onCanvasLeave, toggleOverlay, openTrainingExport, toggleTrainingPage, selectAllTrainingPages, clearTrainingPages, exportTrainingData };
+    const updateCurrentImage = () => {
+      const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+      state.currentImage = img;
+      
+      if (state.viewMode === 'page' && state.displayPageNum > 0) {
+        const pageIdx = state.displayPageNum - 1;
+        if (pageIdx < state.pageData.length) {
+          state.currentPageWords = state.pageData[pageIdx].words;
+        }
+      } else if (state.viewMode === 'combined') {
+        state.currentPageWords = state.pageData.flatMap(pd => pd.words);
+      }
+    };
+
+    const appendTextToEditor = (text: string) => {
+      const currentText = state.text;
+      state.text = currentText ? currentText + '\n' + text : text;
+      onTextChange();
+    };
+
+    // Update image and words when page changes
+    watch(() => state.displayPageNum, () => {
+      nextTick(() => updateCurrentImage());
+    });
+
+    watch(() => state.viewMode, () => {
+      nextTick(() => updateCurrentImage());
+    });
+
+    watch(() => state.pageData, () => {
+      nextTick(() => updateCurrentImage());
+    }, { deep: true });
+
+    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions, onCanvasHover, onCanvasClick, onCanvasLeave, toggleOverlay, openTrainingExport, toggleTrainingPage, selectAllTrainingPages, clearTrainingPages, exportTrainingData, appendTextToEditor, updateCurrentImage };
   },
 });
 </script>
