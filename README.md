@@ -24,6 +24,12 @@ A browser-based Optical Character Recognition (OCR) application for Kannada and 
 - **User Guide** — Built-in help modal with usage instructions
 - **Server Storage** — Optional: Store files and text on server for research
 - **Sanchaya Styling** — Modern UI matching [fonts.sanchaya.net](https://fonts.sanchaya.net)
+- **🆕 Crop & Copy Tool** — Select specific regions of images and extract only the text from those areas
+  - Drag-to-select rectangular regions
+  - Undo/Redo with keyboard shortcuts (`Cmd+Z`, `Cmd+Shift+Z`)
+  - Copy extracted text to editor
+  - Multi-region support with smart state management
+  - Performance optimized for 60fps smooth drawing
 
 ## Supported Languages
 
@@ -233,6 +239,47 @@ Then click **Redeploy** in Coolify.
 
 ---
 
+## 🆕 Crop & Copy Feature
+
+Extract text from specific regions of images using the new Crop & Copy tool.
+
+### Quick Start
+
+1. **Upload image** and run OCR recognition
+2. Click **"Crop Mode"** button to enable region selection
+3. **Drag on image** to select a rectangular region
+4. Click **"Copy Region X"** button to extract text from that area
+5. Text is automatically appended to the editor
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+Z` (Mac) / `Ctrl+Z` | Undo last selection |
+| `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Redo selection |
+| `Esc` | Exit crop mode |
+
+### Features
+
+- **Undo/Redo** — Full history with 20-level stack
+- **Multi-select** — Create multiple regions and extract from each
+- **Keyboard Navigation** — Fully accessible with keyboard shortcuts
+- **Performance** — Optimized 60fps drawing with smart throttling
+- **Memory Efficient** — Bounded history and smart cleanup
+- **Works in Both Versions** — Static HTML and Vue versions supported
+
+### Full Documentation
+
+See [CROP_FEATURE_GUIDE.md](./CROP_FEATURE_GUIDE.md) for:
+- Detailed step-by-step guide
+- Advanced features
+- Troubleshooting
+- Code examples
+- Performance notes
+- Browser compatibility
+
+---
+
 ## Project Structure
 
 ```
@@ -244,19 +291,76 @@ ocrsanchaya/
 ├── coolify.json          # Coolify configuration
 ├── README.md              # This file
 ├── DOCUMENTATION.md       # Full codebase documentation
+├── CROP_FEATURE_GUIDE.md  # Crop & Copy feature guide
 ├── docs/
 │   └── index.html         # HTML documentation page
+├── tests/                 # Automated test suite
+│   ├── run-tests.js       # Standalone test runner (no dependencies)
+│   ├── crop-tool.test.js  # Full mocha test suite
+│   └── package.json       # Test configuration
 ├── ocr-kannada/
 │   ├── src/
 │   │   ├── App.vue        # Main Vue component (OCR, editor, export)
 │   │   └── components/
-│   │       └── ImageLoader.vue  # Image/PDF loader
+│   │       ├── CropTool.vue    # Crop & Copy Vue component
+│   │       └── ImageLoader.vue # Image/PDF loader
 │   ├── public/
 │   │   └── CNAME          # Custom domain config
 │   └── dist/              # Built production files
-└── research/               # OCR results storage (server)
+├── js/
+│   ├── crop-tool.js       # Crop & Copy JavaScript implementation
+│   └── tesseract-ocr.js   # OCR integration
+├── style/
+│   └── ocr.css            # Styling including crop tool styles
+└── research/              # OCR results storage (server)
     └── ocr_results.json
 ```
+
+---
+
+## Testing
+
+### Run Automated Tests
+
+```bash
+# Install dependencies (if not already done)
+cd tests
+npm install
+
+# Run tests with standalone runner (no external dependencies required)
+node run-tests.js
+
+# Or run with mocha (if npm dependencies installed)
+npm test
+
+# Run with watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Manual Testing
+
+1. **Start development servers:**
+   ```bash
+   # Terminal 1: Vue version (port 3000)
+   cd ocr-kannada
+   npm run dev
+
+   # Terminal 2: Static version (port 8001)
+   python3 -m http.server 8001
+   ```
+
+2. **Test static version:**
+   - Visit http://localhost:8001/index.html
+   - Upload image and run OCR
+   - Use crop feature with keyboard shortcuts
+
+3. **Test Vue version:**
+   - Visit http://localhost:3000
+   - Upload image and run OCR
+   - Use crop feature with undo/redo
 
 ---
 
