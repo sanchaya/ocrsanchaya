@@ -547,7 +547,7 @@ export default defineComponent({
       pageData: [] as PageData[],
       viewMode: "page" as "page" | "combined",
       displayPageNum: 0,
-      preserveStyling: true,
+      preserveStyling: false,
       showUserGuide: false,
       showOcrViewer: false,
       ocrViewerTitle: "",
@@ -825,6 +825,7 @@ export default defineComponent({
       state.pageData = [];
       state.displayPageNum = 1;
       state.viewMode = 'page';
+      state.showOverlay = false;
       (window as any).__pageImages = info.pageImages;
     };
 
@@ -832,6 +833,7 @@ export default defineComponent({
       state.currentFile = file;
       state.pageData = [];
       state.displayPageNum = 0;
+      state.showOverlay = false;
       if (SERVER_URL) {
         state.status = "Uploading file...";
         state.currentFileId = await uploadFileToServer(file);
