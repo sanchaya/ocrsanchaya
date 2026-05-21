@@ -143,8 +143,9 @@ The main application component contains:
 - **Header**: Logo, title, navigation links to Sanchaya properties
 - **Image area**: `<ImageLoader>` component for file input
 - **Controls**: Language selector (16 languages), OCR engine selector, progress bar
-- **Action buttons**: Recognize, Recognize All Pages, Unique Words, Export TXT, Export DOCX, Export hOCR, Export HTML Layout, Export TSV
-- **hOCR/HTML/TSV export & viewer row**: Export any format, or view raw data in a full-screen modal with monospace dark-theme display
+- **Action buttons**: Recognize, Recognize All Pages, Unique Words, Show/Hide Boxes, Export TXT, Export DOCX, Export hOCR, Export HTML Layout, Export TSV
+- **hOCR/HTML/TSV export & viewer row**: Export any format, view raw data, view tables, or export **Train Data** (`.box` + `.gt.txt` + PNG for Tesseract training)
+- **Train Data button**: "Train Data" button in export section opens a modal to export per-page PNG + `.box` + `.gt.txt` for Tesseract training
 - **View mode bar**: Page View / Combined View tabs with page indicator for multi-page PDFs
 - **Text editor**: TinyMCE rich text editor with Kannada spellchecker integration
 - **Diff panel**: Shows added/removed words when the user edits OCR output
@@ -152,13 +153,14 @@ The main application component contains:
 - **OCR viewer modal**: Full-screen overlay for viewing hOCR, HTML, and TSV content
 
 **Script logic**:
-- **`PageData` interface**: Per-page storage of `{ text, hocr, tsv, styledHtml }` from Tesseract.js
+- **`PageData` interface**: Per-page storage of `{ text, hocr, tsv, styledHtml, words, symbols }` from Tesseract.js. `words` holds word-level bounding boxes for overlay; `symbols` holds character-level bounding boxes for training data export
+- **`SymbolBox` interface**: Character-level bounding box with `{ text, x0, y0, x1, y1, confidence }`, extracted from Tesseract.js `result.data.symbols`
 - **`textToHtml()`**: Converts plain text (with `\n\n` paragraph breaks and `\n` line breaks) to HTML with `<p>` and `<br>` tags for proper rendering. Joins lines within paragraphs with `<br>` for natural text flow, and joins paragraphs with `<p><br></p><p><br></p>` for visual spacing between blocks
 - **`escapeHtml(text)`**: Escapes HTML special characters (`&`, `<`, `>`, `"`, `'`) for safe insertion into HTML context; used by `generateStyledHtml`
 - **`generateStyledHtml(result)`**: Iterates over `result.data.words` from Tesseract.js, applies inline styling (`<strong>` for bold, `<em>` for italic, `<span style="font-size:Xpx">` for non-default font sizes), wraps each paragraph in `<p>` with `<br>`-separated lines. Returns styled HTML string for the editor
 - **`setEditorContent(html)`**: Sets the TinyMCE editor content with retry polling (up to 30 attempts at 150ms intervals) to handle cases where the editor hasn't finished initializing before OCR completes. Called instead of the old one-shot `updateEditor`
 - **`getStyledHtml(idx)`**: Returns `pageData[idx].styledHtml` (styled HTML with bold/italic/font-size from OCR) if available; falls back to `textToHtml()` with proper paragraph/line breaks. Central accessor used by page navigation, view mode switches, and OCR completion
-- **`extractPageData(result)`**: Extracts plain text from `result.data.paragraphs`, copies hOCR/TSV, returns a `PageData` object
+- **`extractPageData(result)`**: Extracts plain text from `result.data.paragraphs`, copies hOCR/TSV, extracts word and symbol bounding boxes from `result.data.words` and `result.data.symbols`, returns a `PageData` object
 - **`doOCR()`**: Single-page OCR, stores full `PageData` in `pageData[0]`, sets editor content via `setEditorContent`
 - **`doOCRAllPages()`**: Batch OCR for multi-page PDFs. Each page is processed in sequence; as soon as page 1 completes, its text appears in the editor while remaining pages continue processing in the background. Each page's full result (text/hocr/tsv/styledHtml) is stored in `pageData[]`
 - **`handlePageChanged()`**: When user navigates pages in ImageLoader, editor shows that page's OCR text with proper paragraph breaks
@@ -168,11 +170,14 @@ The main application component contains:
 - **`exportTxt()` / `exportDocx()` / `exportHocr()` / `exportHtmlLayout()` / `exportTsv()`**: Client-side download for all formats. HTML layout uses `styledHtml` when available for richer output
 - **`viewOcrFormat()`**: Opens full-screen modal for hOCR/HTML/TSV content
 - **`getCombinedHocr()` / `getCombinedHtmlLayout()` / `getCombinedTsv()`**: Merges per-page data with page separator comments
+- **`openTrainingExport()`**: Opens the training data export modal with page selection and ground truth preview
+- **`exportTrainingData()`**: Exports a zip with per-page PNG images, `.box` character bounding boxes (bottom-left origin), and `.gt.txt` ground truth text for Tesseract CLI training. Uses JSZip for client-side zip creation
+- **`getPageImageData(pageIndex)`**: Retrieves page image data URL from `window.__pageImages` (PDF) or `<img>` element (single image)
 
 **Tesseract.js integration**:
 ```js
 const result = await Tesseract.recognize(imgSrc, languageCode, { logger });
-// result.data: { text, hocr, html, tsv, paragraphs, words, lines, blocks, ... }
+// result.data: { text, hocr, html, tsv, paragraphs, words, symbols, lines, blocks, ... }
 ```
 
 **Server integration**:
@@ -345,12 +350,12 @@ Save OCR text. Accepts JSON body `{ text, language, engine, file_id }`.
 
 ```
 Image/PDF → ImageLoader (render to canvas) → Tesseract.js (browser OCR)
-→ extractPageData + generateStyledHtml → PageData stored ({ text, hocr, tsv, styledHtml } per page)
+→ extractPageData + generateStyledHtml → PageData stored ({ text, hocr, tsv, styledHtml, words, symbols } per page)
 → Displayed in TinyMCE editor via setEditorContent() (page-linked or combined view)
 → Optional: saved to Flask server
 ```
 
-**Per-page PageData storage**: When `doOCRAllPages()` processes a multi-page PDF, each page's full recognition result is stored in `pageData: PageData[]`. Each entry includes `text` (plain), `hocr` (hOCR XML), `tsv` (tab-separated), and `styledHtml` (rich HTML with bold/italic/font-size from OCR word data). This enables individual page editing, per-format export, and the view-mode toggle between page and combined display.
+**Per-page PageData storage**: When `doOCRAllPages()` processes a multi-page PDF, each page's full recognition result is stored in `pageData: PageData[]`. Each entry includes `text` (plain), `hocr` (hOCR XML), `tsv` (tab-separated), `styledHtml` (rich HTML with bold/italic/font-size from OCR word data), `words` (word bounding boxes for overlay), and `symbols` (character bounding boxes for training data export). This enables individual page editing, per-format export, the view-mode toggle between page and combined display, and training data generation.
 
 ### 8.2 PDF Processing
 
@@ -359,6 +364,37 @@ PDF → pdfjsLib getDocument → each page rendered to canvas at 1.5x → pageIm
 ### 8.3 Word Diff
 
 User edits → `onTextChange()` compares original vs current word sets → shows added (green) and removed (red) words → updates pageData in page mode
+
+### 8.4 Training Data Export Flow
+
+```
+User clicks "Train Data" → openTrainingExport() modal
+  → Select pages → preview ground truth (read from pd.text)
+  → Click "Download Training Data (.zip)"
+  → exportTrainingData() for each selected page:
+      ├─ Get page image (from window.__pageImages or <img>.src)
+      ├─ Generate .box: convert symbol coords (top-left → bottom-left origin)
+      ├─ Generate .gt.txt: page text from pd.text
+      └─ Zip (JSZip) → download as training-data.zip
+```
+
+**Output structure:**
+```
+training-data.zip
+  page_001.png    # Source image
+  page_001.box    # Character bboxes (Tesseract .box format)
+  page_001.gt.txt # Ground truth text
+  page_002.png
+  page_002.box
+  page_002.gt.txt
+  ...
+```
+
+**.box coordinate conversion (top-left to bottom-left origin):**
+- `left = x0` (from Tesseract.js symbol bbox)
+- `bottom = imageHeight - y1`
+- `right = x1`
+- `top = imageHeight - y0`
 
 ---
 
@@ -433,10 +469,11 @@ OCR result → generateStyledHtml()
 1. **Client-side OCR** — Zero server load, offline-capable after language data download
 2. **Two frontends** — Static HTML (no build) vs Vue 3 SPA (rich editor)
 3. **Optional server** — Backend is optional; frontends work standalone
-4. **Multi-format export** — TXT, DOCX, hOCR, HTML layout (with styled HTML), TSV from Tesseract.js results
+4. **Multi-format export** — TXT, DOCX, hOCR, HTML layout (with styled HTML), TSV, and **training data** (`.box` + `.gt.txt`) from Tesseract.js results
 5. **Default language: `kan+eng`** — Kannada + English selected by default for mixed-script documents
 6. **Styled editor content** — Word-level bold, italic, and font-size from Tesseract.js preserved as HTML tags in TinyMCE; invalidated on user edit
 7. **Poll-based editor readiness** — `setEditorContent()` polls TinyMCE up to 30 times to handle race condition where OCR completes before editor initialization
+8. **Training data via JSZip** — Client-side zip generation for training data export; JSZip added as npm dependency for `.zip` packaging of per-page image + `.box` + `.gt.txt`
 
 ---
 
@@ -448,7 +485,7 @@ OCR result → generateStyledHtml()
 | `index.html` | 65 | HTML | Static frontend entry point |
 | `js/tesseract-ocr.js` | 236 | JS | Static frontend OCR logic |
 | `style/ocr.css` | 429 | CSS | Static frontend styles |
-| `ocr-kannada/src/App.vue` | ~1184 | Vue/TS | Vue app root component |
+| `ocr-kannada/src/App.vue` | ~1930 | Vue/TS | Vue app root component |
 | `ocr-kannada/src/components/ImageLoader.vue` | 340 | Vue/TS | File loading component |
 | `ocr-kannada/src/main.js` | 4 | JS | Vue app bootstrap |
 | `ocr-kannada/vite.config.js` | 9 | JS | Vite configuration |

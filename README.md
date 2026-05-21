@@ -18,6 +18,7 @@ A browser-based Optical Character Recognition (OCR) application for Kannada and 
 - **Rich Text Editor** — Built-in TinyMCE editor with styled text (bold, italic, font sizes) preserved from OCR, proper paragraph and line break rendering for natural readability
 - **Word Diff** — Track changes made to OCR'd text (added/removed words highlighted)
 - **Unique Words** — Extract and copy unique words from OCR'd text
+- **Training Data Export** — Export per-page PNG images, `.box` files (character-level bounding boxes), and `.gt.txt` ground truth for Tesseract CLI training
 - **Export Options** — Export as TXT, DOCX, hOCR, HTML layout (with preserved styling), or TSV
 - **hOCR/HTML/TSV Viewer** — View raw hOCR, HTML layout, and TSV data in a full-screen modal
 - **User Guide** — Built-in help modal with usage instructions
@@ -225,9 +226,10 @@ Then click **Redeploy** in Coolify.
 6. **View Modes** — Toggle between Page View (per-page editing) and Combined View (all pages concatenated)
 7. **Track Changes** — See word diff when editing text
 8. **Extract Words** — Click "Unique Words" to get all unique words
-9. **Export** — Save as TXT, DOCX, hOCR, HTML (with styling), or TSV
-10. **Help** — Click ಸಹಾಯ | Help in the header for the built-in usage guide
-11. **Server Storage** — If configured, files and text are saved to the server
+9. **Training Data** — Click "Train Data" to export `<page>.png` + `<page>.box` + `<page>.gt.txt` for Tesseract training
+10. **Export** — Save as TXT, DOCX, hOCR, HTML (with styling), or TSV
+11. **Help** — Click ಸಹಾಯ | Help in the header for the built-in usage guide
+12. **Server Storage** — If configured, files and text are saved to the server
 
 ---
 

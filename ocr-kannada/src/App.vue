@@ -86,6 +86,7 @@
         <button @click="viewOcrFormat('html')" class="btn-export-sm">View HTML</button>
         <button @click="viewOcrFormat('tsv')" class="btn-export-sm">View TSV</button>
         <button v-if="detectedTables.length > 0" @click="viewTable" class="btn-export-sm table-btn">View Table</button>
+        <button @click="openTrainingExport" class="btn-export-sm">Train Data</button>
       </div>
     </div>
     <div class="text-container">
@@ -202,6 +203,41 @@
         <pre class="table-viewer-content">{{ tableViewerContent }}</pre>
       </div>
     </div>
+    <div v-if="showTrainingExport" class="ocr-viewer-overlay" @click.self="showTrainingExport = false">
+      <div class="ocr-viewer-modal training-modal">
+        <div class="ocr-viewer-header">
+          <strong>Export Training Data</strong>
+          <button @click="showTrainingExport = false" class="close-btn">&times;</button>
+        </div>
+        <div class="training-body">
+          <p class="training-desc">
+            Generates <code>.box</code> (character bounding boxes), <code>.gt.txt</code> (ground truth text),
+            and page images per page &mdash; ready for Tesseract CLI training.
+            Correct OCR errors in the main editor first; the text below reflects your edits.
+          </p>
+          <div class="training-page-select" v-if="pageData.length > 1">
+            <label>Pages:</label>
+            <button v-for="(_, i) in pageData" :key="i"
+              :class="['tab-btn', { active: trainingExportPages.has(i) }]"
+              @click="toggleTrainingPage(i)">
+              Page {{ i + 1 }}
+            </button>
+            <button @click="selectAllTrainingPages" class="btn-export-sm">All</button>
+            <button @click="clearTrainingPages" class="btn-export-sm">None</button>
+          </div>
+          <div v-if="trainingExportPages.size > 0" class="training-text-section">
+            <h4>Ground Truth Text (read-only — edit in main editor)</h4>
+            <textarea v-model="trainingGroundTruth" class="training-textarea" rows="8" readonly></textarea>
+          </div>
+          <div v-if="trainingExportPages.size === 0" class="training-no-pages">
+            Select at least one page to export.
+          </div>
+        </div>
+        <div class="ocr-viewer-footer" v-if="trainingExportPages.size > 0">
+          <button @click="exportTrainingData" class="btn-primary">Download Training Data (.zip)</button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -218,6 +254,16 @@ interface PageData {
   tsv: string;
   styledHtml: string;
   words: WordBox[];
+  symbols: SymbolBox[];
+}
+
+interface SymbolBox {
+  text: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  confidence: number;
 }
 
 const escapeHtml = (text: string): string => {
@@ -285,12 +331,21 @@ const extractPageData = (result: any): PageData => {
     y1: w.bbox?.y1 ?? w.y1 ?? 0,
     confidence: w.confidence ?? 0,
   }));
+  const symbols: SymbolBox[] = (result.data.symbols || []).map((s: any) => ({
+    text: s.text || '',
+    x0: s.bbox?.x0 ?? 0,
+    y0: s.bbox?.y0 ?? 0,
+    x1: s.bbox?.x1 ?? 0,
+    y1: s.bbox?.y1 ?? 0,
+    confidence: s.confidence ?? 0,
+  }));
   return {
     text: paragraphs.join('\n\n'),
     hocr: result.data.hocr || '',
     tsv: result.data.tsv || '',
     styledHtml: '',
     words,
+    symbols,
   };
 };
 
@@ -564,6 +619,9 @@ export default defineComponent({
         menubar: true,
         toolbar_mode: "sliding",
         toolbar_sticky: true,
+      showTrainingExport: false,
+      trainingExportPages: new Set<number>(),
+      trainingGroundTruth: '',
         mobile: {
           menubar: true,
         },
@@ -1214,7 +1272,108 @@ export default defineComponent({
       }
     };
 
-    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions, onCanvasHover, onCanvasClick, onCanvasLeave, toggleOverlay };
+    const openTrainingExport = () => {
+      const selected = new Set<number>();
+      if (state.displayPageNum > 0) {
+        selected.add(state.displayPageNum - 1);
+      } else if (state.pageData.length > 0) {
+        selected.add(0);
+      }
+      state.trainingExportPages = selected;
+      state.trainingGroundTruth = buildTrainingText(selected);
+      state.showTrainingExport = true;
+    };
+
+    const buildTrainingText = (pages: Set<number>): string => {
+      const parts: string[] = [];
+      for (const i of pages) {
+        const pd = state.pageData[i];
+        if (pd) parts.push(pd.text);
+      }
+      return parts.join('\n');
+    };
+
+    const toggleTrainingPage = (i: number) => {
+      const s = new Set(state.trainingExportPages);
+      if (s.has(i)) s.delete(i); else s.add(i);
+      state.trainingExportPages = s;
+      state.trainingGroundTruth = buildTrainingText(s);
+    };
+
+    const selectAllTrainingPages = () => {
+      const s = new Set<number>();
+      state.pageData.forEach((_, i) => s.add(i));
+      state.trainingExportPages = s;
+      state.trainingGroundTruth = buildTrainingText(s);
+    };
+
+    const clearTrainingPages = () => {
+      state.trainingExportPages = new Set<number>();
+      state.trainingGroundTruth = '';
+    };
+
+    const exportTrainingData = async () => {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const pages = [...state.trainingExportPages].sort();
+      let pageIdx = 0;
+
+      for (const pi of pages) {
+        const pd = state.pageData[pi];
+        if (!pd) continue;
+
+        const pageNum = String(++pageIdx).padStart(3, '0');
+
+        const imgData = getPageImageData(pi);
+        if (imgData) {
+          const base64 = imgData.split(',')[1];
+          zip.file(`page_${pageNum}.png`, base64, { base64: true });
+        }
+
+        const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+        const imgH = img?.naturalHeight ?? 0;
+
+        const boxLines: string[] = [];
+        for (const s of pd.symbols) {
+          if (!s.text || s.text.trim().length === 0) continue;
+          const char = s.text;
+          const left = Math.round(s.x0);
+          const bottom = Math.round(imgH - s.y1);
+          const right = Math.round(s.x1);
+          const top = Math.round(imgH - s.y0);
+          boxLines.push(`${char} ${left} ${bottom} ${right} ${top} 0`);
+        }
+        zip.file(`page_${pageNum}.box`, boxLines.join('\n'));
+
+        zip.file(`page_${pageNum}.gt.txt`, pd.text);
+
+        pageIdx++;
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'training-data.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    const getPageImageData = (pageIndex: number): string | null => {
+      const pageImgs = (window as any).__pageImages;
+      if (pageImgs && pageImgs[pageIndex]) {
+        return pageImgs[pageIndex];
+      }
+      const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+      if (img && img.src) {
+        return img.src;
+      }
+      return null;
+    };
+
+    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions, onCanvasHover, onCanvasClick, onCanvasLeave, toggleOverlay, openTrainingExport, toggleTrainingPage, selectAllTrainingPages, clearTrainingPages, exportTrainingData };
   },
 });
 </script>
@@ -1863,5 +2022,79 @@ footer a:hover {
   .button-group {
     flex-wrap: wrap;
   }
+}
+
+.training-modal {
+  max-width: 700px;
+}
+
+.training-body {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.training-desc {
+  font-size: 13px;
+  color: var(--span-color);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.training-desc code {
+  background: #eee;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.training-page-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.training-page-select label {
+  font-weight: 600;
+  font-size: 13px;
+  margin-right: 4px;
+}
+
+.training-text-section h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.training-textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.training-textarea:focus {
+  outline: none;
+  border-color: var(--text-color3);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+.training-no-pages {
+  text-align: center;
+  color: var(--span-color);
+  padding: 24px;
+}
+
+.ocr-viewer-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
 }
 </style>
