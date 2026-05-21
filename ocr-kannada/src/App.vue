@@ -247,6 +247,7 @@ import ImageLoader from "./components/ImageLoader.vue";
 import Tesseract from "tesseract.js";
 import axios from "axios";
 import Editor from "@tinymce/tinymce-vue";
+import JSZip from "jszip";
 
 interface PageData {
   text: string;
@@ -793,7 +794,7 @@ export default defineComponent({
           }
         } catch (e: any) {
           console.error("Error on page", i + 1, e);
-          state.pageData[i] = { text: '\n[Error on page ' + (i + 1) + ']\n', hocr: '', tsv: '', styledHtml: '' };
+          state.pageData[i] = { text: '\n[Error on page ' + (i + 1) + ']\n', hocr: '', tsv: '', styledHtml: '', words: [], symbols: [] };
         }
       }
 
@@ -1313,52 +1314,62 @@ export default defineComponent({
     };
 
     const exportTrainingData = async () => {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      const pages = [...state.trainingExportPages].sort();
-      let pageIdx = 0;
+      try {
+        const zip = new JSZip();
+        const pages = [...state.trainingExportPages].sort();
+        let pageIdx = 0;
 
-      for (const pi of pages) {
-        const pd = state.pageData[pi];
-        if (!pd) continue;
+        for (const pi of pages) {
+          const pd = state.pageData[pi];
+          if (!pd) continue;
 
-        const pageNum = String(++pageIdx).padStart(3, '0');
+          const pageNum = String(++pageIdx).padStart(3, '0');
 
-        const imgData = getPageImageData(pi);
-        if (imgData) {
-          const base64 = imgData.split(',')[1];
-          zip.file(`page_${pageNum}.png`, base64, { base64: true });
+          const imgData = getPageImageData(pi);
+          if (imgData) {
+            const base64 = imgData.split(',')[1];
+            zip.file(`page_${pageNum}.png`, base64, { base64: true });
+          }
+
+          const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+          const imgH = img?.naturalHeight ?? 0;
+
+          const boxLines: string[] = [];
+          const symbols = pd.symbols || [];
+          for (const s of symbols) {
+            if (!s.text || s.text.trim().length === 0) continue;
+            const char = s.text;
+            const left = Math.round(s.x0);
+            const bottom = Math.round(imgH - s.y1);
+            const right = Math.round(s.x1);
+            const top = Math.round(imgH - s.y0);
+            boxLines.push(`${char} ${left} ${bottom} ${right} ${top} 0`);
+          }
+          zip.file(`page_${pageNum}.box`, boxLines.join('\n'));
+
+          zip.file(`page_${pageNum}.gt.txt`, pd.text || '');
+
+          pageIdx++;
         }
 
-        const img = document.getElementById('ocr-img') as HTMLImageElement | null;
-        const imgH = img?.naturalHeight ?? 0;
-
-        const boxLines: string[] = [];
-        for (const s of pd.symbols) {
-          if (!s.text || s.text.trim().length === 0) continue;
-          const char = s.text;
-          const left = Math.round(s.x0);
-          const bottom = Math.round(imgH - s.y1);
-          const right = Math.round(s.x1);
-          const top = Math.round(imgH - s.y0);
-          boxLines.push(`${char} ${left} ${bottom} ${right} ${top} 0`);
+        if (pageIdx === 0) {
+          alert("No pages selected for export.");
+          return;
         }
-        zip.file(`page_${pageNum}.box`, boxLines.join('\n'));
 
-        zip.file(`page_${pageNum}.gt.txt`, pd.text);
-
-        pageIdx++;
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'training-data.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e: any) {
+        console.error('Training data export error:', e);
+        alert('Failed to export training data: ' + (e.message || e));
       }
-
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'training-data.zip';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     };
 
     const getPageImageData = (pageIndex: number): string | null => {
