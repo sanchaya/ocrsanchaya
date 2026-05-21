@@ -24,8 +24,7 @@
           <CropTool 
             :image="currentImage"
             :words="currentPageWords"
-            @copy-text="onCropTextCopied"
-            @copy-text="appendTextToEditor"
+            :on-copy-text="appendTextToEditor"
           />
           <canvas class="ocr-overlay-canvas" v-show="showOverlay"
             @mousemove="onCanvasHover" @click="onCanvasClick" @mouseleave="onCanvasLeave" />
