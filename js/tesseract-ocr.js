@@ -1,3 +1,9 @@
+/**
+ * OCR Logic and File Processing
+ * Originally created by Benson Ruan
+ * Enhanced with multi-language support, PDF processing, and export functionality
+ */
+
 function getSelectedLangs() {
 	var checked = [];
 	$('#langsel input[type="checkbox"]:checked').each(function() {
