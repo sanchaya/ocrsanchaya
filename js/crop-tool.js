@@ -24,6 +24,11 @@ class CropTool {
     this.ocrResults = null;
     this.imageScale = 1;
     
+    // Undo/Redo history
+    this.history = [];
+    this.historyIndex = -1;
+    this.maxHistorySize = 20;
+    
     this.init();
   }
 
@@ -34,6 +39,8 @@ class CropTool {
     this.ctx = this.canvas.getContext('2d');
     const cropModeBtn = document.getElementById('crop-mode-btn');
     const cropClearBtn = document.getElementById('crop-clear-btn');
+    const undoBtn = document.getElementById('crop-undo-btn');
+    const redoBtn = document.getElementById('crop-redo-btn');
     const selectedImage = document.getElementById('selected-image');
     const cropControls = document.getElementById('crop-controls');
 
@@ -43,9 +50,18 @@ class CropTool {
     if (cropClearBtn) {
       cropClearBtn.addEventListener('click', () => this.clearSelections());
     }
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => this.undo());
+    }
+    if (redoBtn) {
+      redoBtn.addEventListener('click', () => this.redo());
+    }
     if (selectedImage) {
       selectedImage.addEventListener('load', () => this.onImageLoad());
     }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
   }
 
   onImageLoad() {
@@ -157,6 +173,7 @@ class CropTool {
       };
       
       this.selections.push(this.currentSelection);
+      this.saveToHistory();
       
       // Show copy button
       this.showCopyButton(this.currentSelection);
@@ -283,13 +300,114 @@ class CropTool {
   clearSelections() {
     this.selections = [];
     this.currentSelection = null;
+    this.saveToHistory();
     
     // Remove copy buttons
-    document.querySelectorAll('.selection-copy-btn').forEach(btn => btn.remove());
+    this.clearCopyButtons();
     
     if (this.cropModeActive) {
       this.drawImageOnCanvas();
     }
+  }
+  
+  clearCopyButtons() {
+    document.querySelectorAll('.selection-copy-btn').forEach(btn => btn.remove());
+  }
+
+  // ============================================================================
+  // UNDO/REDO FUNCTIONALITY
+  // ============================================================================
+  
+  saveToHistory() {
+    // Remove any redo history if we make a new action
+    this.history = this.history.slice(0, this.historyIndex + 1);
+    
+    // Add new state
+    this.history.push(JSON.parse(JSON.stringify(this.selections)));
+    this.historyIndex++;
+    
+    // Limit history size
+    if (this.history.length > this.maxHistorySize) {
+      this.history.shift();
+      this.historyIndex--;
+    }
+    
+    this.updateHistoryButtons();
+  }
+  
+  undo() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.selections = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+      this.clearCopyButtons();
+      this.drawImageOnCanvas();
+      this.updateHistoryButtons();
+      this.showNotification('Undo: Removed selection');
+    }
+  }
+  
+  redo() {
+    if (this.historyIndex < this.history.length - 1) {
+      this.historyIndex++;
+      this.selections = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+      this.clearCopyButtons();
+      this.drawImageOnCanvas();
+      this.updateHistoryButtons();
+      this.showNotification('Redo: Restored selection');
+    }
+  }
+  
+  updateHistoryButtons() {
+    const undoBtn = document.getElementById('crop-undo-btn');
+    const redoBtn = document.getElementById('crop-redo-btn');
+    
+    if (undoBtn) {
+      undoBtn.disabled = this.historyIndex <= 0;
+      undoBtn.style.opacity = this.historyIndex <= 0 ? '0.5' : '1';
+    }
+    if (redoBtn) {
+      redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+      redoBtn.style.opacity = this.historyIndex >= this.history.length - 1 ? '0.5' : '1';
+    }
+  }
+  
+  handleKeyboardShortcuts(e) {
+    if (!this.cropModeActive) return;
+    
+    // Cmd/Ctrl + Z for undo
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      this.undo();
+    }
+    // Cmd/Ctrl + Shift + Z for redo
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+      e.preventDefault();
+      this.redo();
+    }
+    // Escape to exit crop mode
+    if (e.key === 'Escape') {
+      this.toggleCropMode();
+    }
+  }
+  
+  showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4361ee;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-in-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.remove(), 2000);
   }
 
   setOCRResults(results) {

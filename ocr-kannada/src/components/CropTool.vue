@@ -8,6 +8,20 @@
         {{ cropModeActive ? '✓ Crop Mode Active' : 'Crop Mode' }}
       </button>
       <button 
+        @click="undo"
+        :class="['btn-crop-undo', { disabled: historyIndex <= 0 }]"
+        :disabled="historyIndex <= 0"
+        title="Undo last selection (Cmd+Z)">
+        ↶ Undo
+      </button>
+      <button 
+        @click="redo"
+        :class="['btn-crop-redo', { disabled: historyIndex >= history.length - 1 }]"
+        :disabled="historyIndex >= history.length - 1"
+        title="Redo selection (Cmd+Shift+Z)">
+        ↷ Redo
+      </button>
+      <button 
         @click="clearSelections"
         :class="['btn-crop-clear', { disabled: selections.length === 0 }]"
         :disabled="selections.length === 0"
@@ -92,7 +106,11 @@ export default defineComponent({
       selections: [] as Selection[],
       currentSelection: null as Selection | null,
       cropModeActive: false,
-      imageScale: 1
+      imageScale: 1,
+      // Undo/Redo history
+      history: [] as Selection[][],
+      historyIndex: -1,
+      maxHistorySize: 20
     };
   },
   mounted() {
@@ -179,6 +197,7 @@ export default defineComponent({
         };
 
         this.selections.push(this.currentSelection);
+        this.saveToHistory();
         this.drawCanvasWithImage();
       }
     },
@@ -258,8 +277,46 @@ export default defineComponent({
     clearSelections() {
       this.selections = [];
       this.currentSelection = null;
+      this.saveToHistory();
       if (this.cropModeActive) {
         this.drawCanvasWithImage();
+      }
+    },
+    
+    // ========================================================================
+    // UNDO/REDO FUNCTIONALITY
+    // ========================================================================
+    
+    saveToHistory() {
+      // Remove any redo history if we make a new action
+      this.history = this.history.slice(0, this.historyIndex + 1);
+      
+      // Add new state (deep copy)
+      this.history.push(JSON.parse(JSON.stringify(this.selections)));
+      this.historyIndex++;
+      
+      // Limit history size
+      if (this.history.length > this.maxHistorySize) {
+        this.history.shift();
+        this.historyIndex--;
+      }
+    },
+    
+    undo() {
+      if (this.historyIndex > 0) {
+        this.historyIndex--;
+        this.selections = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+        this.drawCanvasWithImage();
+        this.$emit('notification', 'Undo: Removed selection');
+      }
+    },
+    
+    redo() {
+      if (this.historyIndex < this.history.length - 1) {
+        this.historyIndex++;
+        this.selections = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+        this.drawCanvasWithImage();
+        this.$emit('notification', 'Redo: Restored selection');
       }
     }
   }
@@ -284,7 +341,9 @@ export default defineComponent({
 }
 
 .btn-crop,
-.btn-crop-clear {
+.btn-crop-clear,
+.btn-crop-undo,
+.btn-crop-redo {
   padding: 8px 16px;
   border: 1px solid #4361ee;
   border-radius: 6px;
@@ -312,11 +371,27 @@ export default defineComponent({
   color: #666;
 }
 
-.btn-crop-clear:hover:not(.disabled) {
-  background: #f5f5f5;
+.btn-crop-undo,
+.btn-crop-redo {
+  border-color: #17a2b8;
+  color: #17a2b8;
 }
 
-.btn-crop-clear.disabled {
+.btn-crop-undo:hover:not(.disabled),
+.btn-crop-redo:hover:not(.disabled) {
+  background: rgba(23, 162, 184, 0.1);
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.15);
+}
+
+.btn-crop-clear:hover:not(.disabled),
+.btn-crop-undo:hover:not(.disabled),
+.btn-crop-redo:hover:not(.disabled) {
+  background: rgba(67, 97, 238, 0.05);
+}
+
+.btn-crop-clear.disabled,
+.btn-crop-undo.disabled,
+.btn-crop-redo.disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
