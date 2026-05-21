@@ -281,6 +281,8 @@ export default defineComponent({
   background: var(--third-color, #fff);
   border-radius: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 15;
 }
 
 .page-nav button {
