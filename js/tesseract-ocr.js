@@ -185,8 +185,11 @@ function progressUpdate(packet){
 			if (typeof cropTool !== 'undefined' && cropTool) {
 				cropTool.setOCRResults(packet.data);
 				// Show crop controls
-				const cropControls = document.querySelector('.crop-controls');
-				if (cropControls) cropControls.style.display = 'block';
+				const cropControls = document.getElementById('crop-controls');
+				if (cropControls) {
+					cropControls.style.display = 'block';
+					console.log('Crop controls shown');
+				}
 			}
 		}
 

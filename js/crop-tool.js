@@ -35,6 +35,7 @@ class CropTool {
     const cropModeBtn = document.getElementById('crop-mode-btn');
     const cropClearBtn = document.getElementById('crop-clear-btn');
     const selectedImage = document.getElementById('selected-image');
+    const cropControls = document.getElementById('crop-controls');
 
     if (cropModeBtn) {
       cropModeBtn.addEventListener('click', () => this.toggleCropMode());
@@ -91,9 +92,16 @@ class CropTool {
     this.canvas.style.display = this.cropModeActive ? 'block' : 'none';
     
     const btn = document.getElementById('crop-mode-btn');
+    const cropControls = document.getElementById('crop-controls');
+    
     if (btn) {
       btn.textContent = this.cropModeActive ? 'Crop Mode (Active)' : 'Crop Mode';
       btn.classList.toggle('active', this.cropModeActive);
+    }
+    
+    // Ensure crop controls are visible when crop mode is active
+    if (cropControls && this.ocrResults) {
+      cropControls.style.display = 'block';
     }
     
     if (!this.cropModeActive) {

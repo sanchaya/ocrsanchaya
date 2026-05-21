@@ -460,9 +460,11 @@ p a:hover {
   left: 0;
   cursor: crosshair;
   z-index: 5;
+  border: 2px dashed #4361ee;
+  border-radius: 4px;
 }
 
-.crop-controls {
+#crop-controls {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -475,7 +477,7 @@ p a:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.crop-controls button {
+#crop-controls button {
   padding: 6px 12px;
   font-size: 12px;
   border: 1px solid var(--border-color);
@@ -486,12 +488,12 @@ p a:hover {
   color: var(--text-color1);
 }
 
-.crop-controls button:hover {
+#crop-controls button:hover {
   border-color: var(--text-color3);
   background-color: rgba(67, 97, 238, 0.05);
 }
 
-.crop-controls button.active {
+#crop-controls button.active {
   background: var(--primary-gradient);
   color: white;
   border-color: #4361ee;
