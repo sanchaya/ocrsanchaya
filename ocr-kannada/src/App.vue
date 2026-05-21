@@ -19,7 +19,15 @@
   </header>
   <main class="container">
 <div class="img-container">
-        <ImageLoader @pdf-loaded="handlePdfLoaded" @file-loaded="handleFileLoaded" @page-changed="handlePageChanged" />
+        <div class="img-wrapper">
+          <ImageLoader @pdf-loaded="handlePdfLoaded" @file-loaded="handleFileLoaded" @page-changed="handlePageChanged" />
+          <canvas class="ocr-overlay-canvas" v-show="showOverlay"
+            @mousemove="onCanvasHover" @click="onCanvasClick" @mouseleave="onCanvasLeave" />
+          <div v-if="hoveredWord" class="word-tooltip" :style="tooltipStyle">
+            {{ hoveredWord.text }}
+            <span class="tooltip-confidence">({{ Math.round(hoveredWord.confidence || 0) }}%)</span>
+          </div>
+        </div>
       </div>
     <div class="actions">
       <progress v-if="showProgress" :value="progress" />
@@ -53,6 +61,7 @@
         </button>
         <button @click="doOCRAllPages" :disabled="totalPages <= 1 || isEngineLoading" class="btn-primary">Recognize All Pages</button>
         <button @click="extractUniqueWords" class="btn-secondary">Unique Words</button>
+        <button @click="toggleOverlay" class="btn-export" v-if="pageData.length > 0">{{ showOverlay ? 'Hide Boxes' : 'Show Boxes' }}</button>
         <button @click="exportTxt" class="btn-export">Export TXT</button>
         <button @click="exportDocx" class="btn-export">Export DOCX</button>
       </div>
@@ -208,6 +217,7 @@ interface PageData {
   hocr: string;
   tsv: string;
   styledHtml: string;
+  words: WordBox[];
 }
 
 const escapeHtml = (text: string): string => {
@@ -267,11 +277,20 @@ const textToHtml = (text: string): string => {
 
 const extractPageData = (result: any): PageData => {
   const paragraphs = (result.data.paragraphs || []).map((p: any) => p.text.trim()).filter((t: string) => t.length > 0);
+  const words: WordBox[] = (result.data.words || []).map((w: any) => ({
+    text: w.text || '',
+    x0: w.bbox?.x0 ?? w.x0 ?? 0,
+    y0: w.bbox?.y0 ?? w.y0 ?? 0,
+    x1: w.bbox?.x1 ?? w.x1 ?? 0,
+    y1: w.bbox?.y1 ?? w.y1 ?? 0,
+    confidence: w.confidence ?? 0,
+  }));
   return {
     text: paragraphs.join('\n\n'),
     hocr: result.data.hocr || '',
     tsv: result.data.tsv || '',
     styledHtml: '',
+    words,
   };
 };
 
@@ -281,6 +300,7 @@ interface WordBox {
   y0: number;
   x1: number;
   y1: number;
+  confidence?: number;
 }
 
 interface DetectedTable {
@@ -532,6 +552,10 @@ export default defineComponent({
       showOcrViewer: false,
       ocrViewerTitle: "",
       ocrViewerContent: "",
+      showOverlay: false,
+      hoveredWord: null as WordBox | null,
+      hoveredWordIndex: -1,
+      tooltipStyle: { top: '0px', left: '0px' },
       detectedTables: [] as DetectedTable[],
       showTableViewer: false,
       tableViewerContent: "",
@@ -664,7 +688,8 @@ export default defineComponent({
           state.text = resolvePageHtml(page);
           const tables = detectTablesFromHocr(page.hocr);
           state.detectedTables = tables;
-          nextTick(() => setEditorContent(state.text));
+          state.showOverlay = true;
+          nextTick(() => { setEditorContent(state.text); drawOverlay(); });
         } catch (e: any) {
           console.error(e);
           state.text = "Error during OCR: " + e.message || e;
@@ -705,7 +730,8 @@ export default defineComponent({
             state.displayPageNum = 1;
             state.originalText = page.text;
             state.text = resolvePageHtml(page);
-            nextTick(() => setEditorContent(state.text));
+            state.showOverlay = true;
+            nextTick(() => { setEditorContent(state.text); drawOverlay(); });
           }
         } catch (e: any) {
           console.error("Error on page", i + 1, e);
@@ -726,7 +752,8 @@ export default defineComponent({
         const pi = state.displayPageNum - 1;
         state.originalText = state.pageData[pi].text;
         state.text = getStyledHtml(pi);
-        nextTick(() => setEditorContent(state.text));
+        state.showOverlay = true;
+        nextTick(() => { setEditorContent(state.text); drawOverlay(); });
       }
     };
 
@@ -745,45 +772,51 @@ export default defineComponent({
 
     const handlePageChanged = (pageNum: number) => {
       state.displayPageNum = pageNum;
+      state.hoveredWordIndex = -1;
+      state.hoveredWord = null;
       if (state.viewMode === 'page') {
         const pd = state.pageData[pageNum - 1];
         if (pd !== undefined) {
           state.originalText = pd.text;
           state.text = getStyledHtml(pageNum - 1);
-          nextTick(() => setEditorContent(state.text));
+          nextTick(() => { setEditorContent(state.text); drawOverlay(); });
         } else {
           state.text = '';
-          nextTick(() => setEditorContent(''));
+          nextTick(() => { setEditorContent(''); drawOverlay(); });
         }
       }
     };
 
     const switchToPageView = () => {
       state.viewMode = 'page';
+      state.hoveredWordIndex = -1;
+      state.hoveredWord = null;
       if (state.displayPageNum > 0 && state.pageData[state.displayPageNum - 1] !== undefined) {
         const pi = state.displayPageNum - 1;
         const pageText = state.pageData[pi].text;
         state.originalText = pageText;
         state.text = getStyledHtml(pi);
-        nextTick(() => setEditorContent(state.text));
+        nextTick(() => { setEditorContent(state.text); drawOverlay(); });
       } else if (state.pageData.length > 0) {
         state.displayPageNum = 1;
         const pageText = state.pageData[0].text;
         state.originalText = pageText;
         state.text = getStyledHtml(0);
-        nextTick(() => setEditorContent(state.text));
+        nextTick(() => { setEditorContent(state.text); drawOverlay(); });
       }
     };
 
     const switchToCombinedView = () => {
       state.viewMode = 'combined';
+      state.hoveredWordIndex = -1;
+      state.hoveredWord = null;
       const total = state.pageData.length || state.totalPages;
       const combined = state.pageData.map((p, i) =>
         `--- Page ${i + 1} of ${total} ---\n\n${p.text.trim()}\n\n`
       ).join('');
       state.originalText = combined;
       state.text = textToHtml(combined);
-      nextTick(() => setEditorContent(state.text));
+      nextTick(() => { setEditorContent(state.text); drawOverlay(); });
     };
 
     const handlePdfLoaded = (info: { totalPages: number; pageImages: string[] }) => {
@@ -1007,7 +1040,179 @@ export default defineComponent({
       state.originalText = state.text;
     };
 
-    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions };
+    let overlayResizeObserver: ResizeObserver | null = null;
+
+    const getCurrentWords = (): WordBox[] => {
+      if (state.viewMode === 'page' && state.displayPageNum > 0 && state.pageData[state.displayPageNum - 1]) {
+        return state.pageData[state.displayPageNum - 1].words || [];
+      }
+      if (state.pageData.length > 0) {
+        return state.pageData[0].words || [];
+      }
+      return [];
+    };
+
+    const drawOverlay = () => {
+      const canvas = document.querySelector('.ocr-overlay-canvas') as HTMLCanvasElement | null;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const words = getCurrentWords();
+      if (!words.length) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+
+      const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+      if (!img || !img.naturalWidth) return;
+
+      const container = canvas.parentElement!;
+      const containerRect = container.getBoundingClientRect();
+      const imgRect = img.getBoundingClientRect();
+
+      canvas.width = containerRect.width;
+      canvas.height = containerRect.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const imgW = img.naturalWidth;
+      const imgH = img.naturalHeight;
+      const displayW = imgRect.width;
+      const displayH = imgRect.height;
+      const scale = Math.min(displayW / imgW, displayH / imgH);
+      const renderedW = imgW * scale;
+      const renderedH = imgH * scale;
+      const offsetX = (displayW - renderedW) / 2 + (imgRect.left - containerRect.left);
+      const offsetY = (displayH - renderedH) / 2 + (imgRect.top - containerRect.top);
+
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const x = offsetX + w.x0 * scale;
+        const y = offsetY + w.y0 * scale;
+        const bw = (w.x1 - w.x0) * scale;
+        const bh = (w.y1 - w.y0) * scale;
+
+        const conf = w.confidence ?? 0;
+        let color: string;
+        if (conf >= 90) color = 'rgba(40, 167, 69, 0.8)';
+        else if (conf >= 70) color = 'rgba(255, 193, 7, 0.8)';
+        else color = 'rgba(220, 53, 69, 0.8)';
+
+        if (i === state.hoveredWordIndex) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.fillRect(x, y, bw, bh);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+        } else {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+        }
+        ctx.strokeRect(x, y, bw, bh);
+      }
+
+      if (!overlayResizeObserver) {
+        const obsContainer = document.querySelector('.img-container');
+        if (obsContainer) {
+          overlayResizeObserver = new ResizeObserver(() => { drawOverlay(); });
+          overlayResizeObserver.observe(obsContainer);
+        }
+      }
+    };
+
+    const computeWordHit = (mx: number, my: number): { index: number; word: WordBox | null } => {
+      const canvas = document.querySelector('.ocr-overlay-canvas') as HTMLCanvasElement | null;
+      if (!canvas) return { index: -1, word: null };
+      const rect = canvas.getBoundingClientRect();
+      const cx = mx - rect.left;
+      const cy = my - rect.top;
+
+      const words = getCurrentWords();
+      if (!words.length) return { index: -1, word: null };
+
+      const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+      if (!img || !img.naturalWidth) return { index: -1, word: null };
+
+      const container = canvas.parentElement!;
+      const containerRect = container.getBoundingClientRect();
+      const imgRect = img.getBoundingClientRect();
+
+      const imgW = img.naturalWidth;
+      const imgH = img.naturalHeight;
+      const displayW = imgRect.width;
+      const displayH = imgRect.height;
+      const scale = Math.min(displayW / imgW, displayH / imgH);
+      const renderedW = imgW * scale;
+      const renderedH = imgH * scale;
+      const offsetX = (displayW - renderedW) / 2 + (imgRect.left - containerRect.left);
+      const offsetY = (displayH - renderedH) / 2 + (imgRect.top - containerRect.top);
+
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const bx = offsetX + w.x0 * scale;
+        const by = offsetY + w.y0 * scale;
+        const bw = (w.x1 - w.x0) * scale;
+        const bh = (w.y1 - w.y0) * scale;
+        if (cx >= bx && cx <= bx + bw && cy >= by && cy <= by + bh) {
+          return { index: i, word: w };
+        }
+      }
+      return { index: -1, word: null };
+    };
+
+    const onCanvasHover = (e: MouseEvent) => {
+      const hit = computeWordHit(e.clientX, e.clientY);
+      if (hit.index !== state.hoveredWordIndex) {
+        state.hoveredWordIndex = hit.index;
+        state.hoveredWord = hit.word;
+        if (hit.word) {
+          const canvas = document.querySelector('.ocr-overlay-canvas') as HTMLCanvasElement | null;
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const container = canvas.parentElement!;
+            const containerRect = container.getBoundingClientRect();
+            const img = document.getElementById('ocr-img') as HTMLImageElement | null;
+            if (img && img.naturalWidth) {
+              const imgRect = img.getBoundingClientRect();
+              const scale = Math.min(imgRect.width / img.naturalWidth, imgRect.height / img.naturalHeight);
+              const renderedW = img.naturalWidth * scale;
+              const offsetX = (imgRect.width - renderedW) / 2 + (imgRect.left - containerRect.left);
+              const by = (hit.word.y0 * scale) + (imgRect.height - img.naturalHeight * scale) / 2 + (imgRect.top - containerRect.top);
+              const bx = offsetX + hit.word.x0 * scale;
+              state.tooltipStyle = {
+                top: Math.max(0, by - 28) + 'px',
+                left: bx + 'px',
+              };
+            }
+          }
+        }
+        drawOverlay();
+      }
+    };
+
+    const onCanvasClick = () => {
+      if (state.hoveredWord && state.hoveredWord.text) {
+        const editor = (window as any).tinymce?.get?.('0');
+        if (editor) {
+          editor.focus();
+          try {
+            editor.execCommand('mceSearchReplace', false, state.hoveredWord.text);
+          } catch (_) { }
+        }
+      }
+    };
+
+    const onCanvasLeave = () => {
+      state.hoveredWordIndex = -1;
+      state.hoveredWord = null;
+      drawOverlay();
+    };
+
+    const toggleOverlay = () => {
+      state.showOverlay = !state.showOverlay;
+      if (state.showOverlay) {
+        nextTick(() => drawOverlay());
+      }
+    };
+
+    return { ...toRefs(state), doOCR, doOCRAllPages, exportTxt, exportDocx, exportHocr, exportHtmlLayout, exportTsv, viewOcrFormat, handlePdfLoaded, handleFileLoaded, handlePageChanged, switchToPageView, switchToCombinedView, extractUniqueWords, copyUniqueWords, onTextChange, setOriginalText, viewTable, copyTableContent, languageOptions, onCanvasHover, onCanvasClick, onCanvasLeave, toggleOverlay };
   },
 });
 </script>
@@ -1142,6 +1347,42 @@ main {
   border: 1px solid var(--border-color);
   overflow: hidden;
   min-height: 70vh;
+  position: relative;
+}
+
+.img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.ocr-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.word-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.tooltip-confidence {
+  opacity: 0.7;
+  margin-left: 4px;
 }
 
 .text-container {
