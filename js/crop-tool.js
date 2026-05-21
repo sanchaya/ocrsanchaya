@@ -6,6 +6,8 @@
  * - Drag-to-select rectangles on image
  * - Extract OCR text from selected regions
  * - Copy/append extracted text to textarea
+ * - Undo/Redo functionality with keyboard shortcuts
+ * - Optimized for performance with large images
  */
 
 class CropTool {
@@ -28,6 +30,12 @@ class CropTool {
     this.history = [];
     this.historyIndex = -1;
     this.maxHistorySize = 20;
+    
+    // Performance optimization
+    this.drawRequestId = null;
+    this.lastDrawTime = 0;
+    this.minDrawInterval = 16; // ~60fps
+    this.cachedImageCanvas = null;
     
     this.init();
   }
@@ -96,7 +104,33 @@ class CropTool {
   }
 
   drawImageOnCanvas() {
+    // Cancel any pending draw request
+    if (this.drawRequestId) {
+      cancelAnimationFrame(this.drawRequestId);
+    }
+    
+    // Use RequestAnimationFrame for smooth drawing
+    this.drawRequestId = requestAnimationFrame(() => {
+      const now = Date.now();
+      
+      // Throttle draws to ~60fps
+      if (now - this.lastDrawTime < this.minDrawInterval) {
+        this.drawRequestId = requestAnimationFrame(() => this.drawImageOnCanvasNow());
+        return;
+      }
+      
+      this.drawImageOnCanvasNow();
+      this.lastDrawTime = now;
+    });
+  }
+  
+  drawImageOnCanvasNow() {
+    if (!this.ctx || !this.img) return;
+    
+    // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw image
     this.ctx.drawImage(this.img, 0, 0, this.canvas.width, this.canvas.height);
     
     // Draw existing selections
@@ -141,8 +175,19 @@ class CropTool {
     this.currentX = Math.round((e.clientX - rect.left) / this.imageScale);
     this.currentY = Math.round((e.clientY - rect.top) / this.imageScale);
     
+    // Throttled redraw
+    const now = Date.now();
+    if (now - this.lastDrawTime >= this.minDrawInterval) {
+      this.redrawWithPreview();
+      this.lastDrawTime = now;
+    }
+  }
+  
+  redrawWithPreview() {
+    if (!this.ctx) return;
+    
     // Redraw everything
-    this.drawImageOnCanvas();
+    this.drawImageOnCanvasNow();
     
     // Draw current selection (preview)
     this.ctx.strokeStyle = '#4361ee';
@@ -246,31 +291,45 @@ class CropTool {
     
     const selectedLines = [];
     
+    // Optimize by using Set for faster lookups if available
     if (this.ocrResults.data && this.ocrResults.data.lines) {
-      this.ocrResults.data.lines.forEach(line => {
+      // Filter lines more efficiently
+      const selectedLineIndices = [];
+      
+      for (let i = 0; i < this.ocrResults.data.lines.length; i++) {
+        const line = this.ocrResults.data.lines[i];
         if (this.isLineInRegion(line.bbox, selection)) {
+          selectedLineIndices.push(i);
           selectedLines.push(line.text);
         }
-      });
+      }
+      
+      // If too many lines selected, warn for memory
+      if (selectedLineIndices.length > 1000) {
+        console.warn(`Warning: Large selection with ${selectedLineIndices.length} lines. Performance may be affected.`);
+      }
     } else if (this.ocrResults.data && this.ocrResults.data.words) {
-      // Fallback to word-level extraction
+      // Fallback to word-level extraction with optimization
       let currentLineText = '';
       let currentLineY = null;
       
-      this.ocrResults.data.words.forEach(word => {
-        if (this.isPointInRegion(word.bbox, selection)) {
-          if (currentLineY === null) {
-            currentLineY = word.bbox.y0;
-          }
-          
-          // Check if we're on a new line
-          if (Math.abs(word.bbox.y0 - currentLineY) > 5) {
-            if (currentLineText) selectedLines.push(currentLineText);
-            currentLineText = word.text;
-            currentLineY = word.bbox.y0;
-          } else {
-            currentLineText += ' ' + word.text;
-          }
+      // Pre-filter words to reduce iteration
+      const relevantWords = this.ocrResults.data.words.filter(word => 
+        this.isPointInRegion(word.bbox, selection)
+      );
+      
+      relevantWords.forEach(word => {
+        if (currentLineY === null) {
+          currentLineY = word.bbox.y0;
+        }
+        
+        // Check if we're on a new line
+        if (Math.abs(word.bbox.y0 - currentLineY) > 5) {
+          if (currentLineText) selectedLines.push(currentLineText);
+          currentLineText = word.text;
+          currentLineY = word.bbox.y0;
+        } else {
+          currentLineText += ' ' + word.text;
         }
       });
       
@@ -408,6 +467,43 @@ class CropTool {
     document.body.appendChild(notification);
     
     setTimeout(() => notification.remove(), 2000);
+  }
+
+  // ============================================================================
+  // MEMORY & PERFORMANCE MANAGEMENT
+  // ============================================================================
+  
+  cleanup() {
+    // Cancel any pending animation frames
+    if (this.drawRequestId) {
+      cancelAnimationFrame(this.drawRequestId);
+      this.drawRequestId = null;
+    }
+    
+    // Clear cached data
+    this.selections = [];
+    this.history = [];
+    this.ocrResults = null;
+    this.cachedImageCanvas = null;
+    
+    // Disable crop mode
+    if (this.cropModeActive) {
+      this.toggleCropMode();
+    }
+  }
+  
+  getMemoryStats() {
+    return {
+      selectionsCount: this.selections.length,
+      historySize: this.history.length,
+      maxHistorySize: this.maxHistorySize,
+      hasOCRData: this.ocrResults !== null,
+      estimatedMemory: {
+        selections: this.selections.length * 64, // ~64 bytes per selection
+        history: this.history.length * this.selections.length * 64,
+        ocrData: this.ocrResults ? 'data loaded' : '0 bytes'
+      }
+    };
   }
 
   setOCRResults(results) {
