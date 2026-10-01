@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY server.py requirements.txt ./
+COPY server.py requirements.txt index.html favicon.ico ./
+COPY js ./js
+COPY style ./style
+COPY images ./images
 
 RUN pip install --no-cache-dir -r requirements.txt
 
